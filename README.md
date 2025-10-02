@@ -1,6 +1,8 @@
 # 🛒 TPI - Grupo 13  
 **Desarrollo de Software 2025 - UTN FRRe**  
 
+En construccion...
+
  📌 Descripción  
 Este proyecto corresponde al Trabajo Práctico Integrador (TPI) de la cátedra **Desarrollo de Software**.  
 El objetivo es desarrollar un sistema de compras online compuesto por diferentes subsistemas (Compras, Stock, Logística), implementando APIs REST y comunicación entre servicios.  
