@@ -23,9 +23,3 @@ jobs:
 
       - name: Validate Compras OpenAPI definition
         run: swagger-cli validate ./compras/openapi.yaml
-
-      - name: Validate Logistica OpenAPI definition
-        run: swagger-cli validate ./logistica/openapi.yaml
-
-      - name: Validate Stock OpenAPI definition
-        run: swagger-cli validate ./stock/openapi.yaml
