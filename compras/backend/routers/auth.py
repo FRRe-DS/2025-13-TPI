@@ -2,7 +2,6 @@ from fastapi import APIRouter
 from pydantic import BaseModel
 
 router = APIRouter()
-
 class Login(BaseModel):
     email: str
     contraseña: str
