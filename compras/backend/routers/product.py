@@ -9,3 +9,4 @@ def get_products():
 @router.get("/{id}")
 def get_product(id: int):
     return {"id": id, "nombre": f"Producto {id}"}
+
