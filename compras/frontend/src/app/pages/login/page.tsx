@@ -53,7 +53,7 @@ export default function LoginPage() {
         
          <p className="text-center text-gray-600 text-sm mb-6">
           ¿No tienes una cuenta?{' '}
-          <a href="/register" className="text-blue-500 hover:text-blue-600 font-medium">
+          <a href="/pages/register" className="text-blue-500 hover:text-blue-600 font-medium">
             Regístrate
           </a>
         </p>
@@ -67,7 +67,7 @@ export default function LoginPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+              className="w-full px-4 py-3 border border-gray-300 placeholder:text-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
             />
           </div>
 
@@ -78,7 +78,7 @@ export default function LoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+              className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
             />
           </div>
 
