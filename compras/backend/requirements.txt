@@ -1,4 +1,7 @@
 fastapi
-uvicorn
-python-jose
+uvicorn[standard]
+sqlalchemy
 pydantic
+alembic
+# Si usas SQLite en Python estándar, no necesitas instalar un paquete adicional.
+# Para drivers alternativos, usa 'pysqlite3' o configura tu base de datos (psycopg2, mysqlclient, etc.).
