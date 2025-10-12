@@ -12,3 +12,4 @@ class Product(Base):
     category = Column(String)
 
     cart_items = relationship("Cart_Item", back_populates="product")
+    order_items = relationship("OrderItem", back_populates="product")

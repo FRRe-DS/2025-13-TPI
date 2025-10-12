@@ -11,3 +11,4 @@ class OrderItem(Base):
     price = Column(Numeric(10, 2))
     
     order = relationship("Order", back_populates="orderItems",)
+    product = relationship("Product", back_populates="order_items")
