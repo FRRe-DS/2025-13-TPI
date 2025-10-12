@@ -5,7 +5,7 @@ from ..db import Base
 class User_Profile(Base):
     __tablename__ = 'userProfiles'
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     email = Column(String, unique=True, index=True)
     phone = Column(Integer, unique=True)
     dni = Column(Integer, unique=True)
