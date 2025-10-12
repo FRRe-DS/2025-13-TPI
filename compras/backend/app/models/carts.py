@@ -1,4 +1,5 @@
 from sqlalchemy import Column, Integer, ForeignKey, Numeric
+from sqlalchemy.orm import relationship
 from ..db import Base
 
 class Cart(Base):
@@ -6,3 +7,6 @@ class Cart(Base):
     id = Column(Integer, primary_key=True, index=True)
     userId = Column(Integer, ForeignKey('user.id'))
     total = Column(Integer)
+
+    items = relationship("Cart_Item", back_populates="cart", cascade="all, delete-orphan")
+    user = relationship("User", back_populates="cart")

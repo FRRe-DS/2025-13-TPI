@@ -24,5 +24,6 @@ class User(Base):
     
 
     # relación uno-a-uno / uno-a-muchos desde el lado "padre"
-    profiles = relationship("userProfile", back_populates="user", uselist=False, cascade="all, delete-orphan")
+    userProfiles = relationship("userProfile", back_populates="user", uselist=False, cascade="all, delete-orphan")
     orders = relationship("Order", back_populates="user", cascade="all, delete-orphan")
+    cart = relationship("Cart", back_populates="user", uselist=False, cascade="all, delete-orphan")

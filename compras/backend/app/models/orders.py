@@ -9,6 +9,7 @@ class Order(Base):
     date = Column(String)
     total = Column(Integer)
     status = Column(String)
+    
     Orderitems = relationship("OrderItem", back_populates="order", cascade="all, delete-orphan")
     user = relationship("User", back_populates="orders")
     tracking = relationship("Tracking", back_populates="order", uselist=False)
