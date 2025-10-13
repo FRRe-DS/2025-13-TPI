@@ -20,7 +20,7 @@ Backend
 - [FastAPI](https://fastapi.tiangolo.com/) → framework para construir APIs rápidas y seguras.
 - [Uvicorn](https://www.uvicorn.org/) → servidor ASGI para correr la app FastAPI.
 - [JWT](https://jwt.io/) → autenticación de usuarios.
-- Base de datos [SQLite] - [SqlAlquemi] para migraciones [alembic]
+- Base de datos [SQLite] - [SqlAlquemi] para migraciones [alembic] - [pydantic]
 
 ### Frontend
 
