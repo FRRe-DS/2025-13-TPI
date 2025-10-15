@@ -24,3 +24,8 @@ class User(UserBase):
 
     class Config:
         orm_mode = True
+
+class UserOut(UserBase):
+    id: int
+    is_active: bool
+    is_admin: bool
