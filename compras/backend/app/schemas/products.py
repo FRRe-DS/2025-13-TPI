@@ -1,33 +1,40 @@
-from typing import Optional
-from pydantic import BaseModel
+from typing import Optional, Annotated
 from decimal import Decimal
+from pydantic import BaseModel, Field, field_validator
 
 
+# Definimos un alias de tipo para reusar:
+Price = Annotated[Decimal, Field(max_digits=10, decimal_places=2)]
 class ProductBase(BaseModel):
-    name: Optional[str] = None
-    description: Optional[str] = None
-    price: Optional[Decimal] = None
+    name: str
+    description: str | None = None
+    price: Price
+    sku: str | None = None
     stock: Optional[int] = None
     category: Optional[str] = None
 
+    @field_validator("name")
+    @classmethod
+    def name_not_empty(cls, v):
+        if not v or not v.strip():
+            raise ValueError("Name no puede estar vacío")
+        return v.strip()
 
 class ProductCreate(ProductBase):
-    name: str
-    price: Decimal
-    stock: int
-
+    pass
+    
 
 class ProductUpdate(BaseModel):
-    name: Optional[str] = None
-    description: Optional[str] = None
-    price: Optional[Decimal] = None
+    name: str | None = None
+    description: str | None = None
+    price: Price | None = None
+    sku: str | None = None
     stock: Optional[int] = None
     category: Optional[str] = None
 
 
-class Product(ProductBase):
+class ProductOut(ProductBase):
     id: int
-
     class Config:
-        orm_mode = True
+        from_attributes = True
 

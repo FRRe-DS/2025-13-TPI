@@ -5,7 +5,7 @@ from .user_profiles import (
     UserProfileUpdate,
     UserProfileBase,
 )
-from .products import Product, ProductCreate, ProductUpdate, ProductBase
+from .products import ProductOut, ProductCreate, ProductUpdate, ProductBase
 from .carts import Cart, CartCreate, CartUpdate, CartBase
 from .cart_items import CartItem, CartItemCreate, CartItemUpdate, CartItemBase
 from .orders import Order, OrderCreate, OrderUpdate, OrderBase
@@ -24,7 +24,7 @@ __all__ = [
     "UserProfileUpdate",
     "UserProfileBase",
     # product
-    "Product",
+    "ProductOut",
     "ProductCreate",
     "ProductUpdate",
     "ProductBase",
