@@ -21,3 +21,11 @@ class CartItemResponse(BaseModel):
 
     class Confing:
         from_attributes = True
+
+class CartResponse(BaseModel):
+    items: List[CartItemResponse]
+    total_items: int
+    subtotal: condecimal(max_digits=10, decimal_places=2)
+    
+    class Config:
+        from_attributes = True

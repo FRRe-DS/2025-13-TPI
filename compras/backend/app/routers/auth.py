@@ -12,6 +12,7 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
+
 @router.post("/register", response_model=UserOut, status_code=201)
 def register(payload: UserCreate, db: Session = Depends(get_db)):
     if get_by_email(db, payload.email):
@@ -30,11 +31,13 @@ def register(payload: UserCreate, db: Session = Depends(get_db)):
 
 
 @router.post("/login", response_model=Token)
-def login(payload: UserLogin, db: Session = Depends(get_db)):
-    user = authenticate(db, payload.email, payload.password)
+def login(form_data: OAuth2PasswordRequestForm = Depends(),
+          db: Session = Depends(get_db)):
+    user = authenticate(db, form_data.username, form_data.password)
     if not user:
         raise HTTPException(status_code=401, detail="credenciales inválidas")
     return Token(access_token=create_access_token(subject=user.id))
+
 
 
 def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> UserOut:
@@ -44,7 +47,7 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
     user_id = int(payload["sub"])
     from app.models.user import User
     user = db.get(User, user_id)
-    if not user or not user.is_active:
+    if not user:
         raise HTTPException(status_code=401, detail="Usuario inactivo o no encontrado")
     return UserOut(
         id=user.id,
