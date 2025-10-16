@@ -47,7 +47,7 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
     user_id = int(payload["sub"])
     from app.models.user import User
     user = db.get(User, user_id)
-    if not user or not user.is_active:
+    if not user:
         raise HTTPException(status_code=401, detail="Usuario inactivo o no encontrado")
     return UserOut(
         id=user.id,
