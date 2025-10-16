@@ -2,22 +2,19 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/context/AuthContext';
 
 export default function Home() {
   const router = useRouter();
+  const { token } = useAuth();
 
   useEffect(() => {
-    // Verificar si el usuario tiene sesión activa
-    const token = localStorage.getItem('token');
-    
     if (token) {
-      // Si tiene token, ir al dashboard
       router.push('/dashboard');
     } else {
-      // Si no tiene token, ir al login
-      router.push('/pages/login');
+      router.push('/login');
     }
-  }, [router]);
+  }, [token, router]);
 
   return (
     <div className="min-h-screen bg-gray-100 flex items-center justify-center">

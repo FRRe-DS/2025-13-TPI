@@ -1,49 +1,30 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { isAuthenticated } from '@/lib/auth';
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/context/AuthContext";
 
-interface ProtectedRouteProps {
+export default function ProtectedRoute({
+  children,
+}: {
   children: React.ReactNode;
-}
-
-export default function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const [isLoading, setIsLoading] = useState(true);
-  const [isAuth, setIsAuth] = useState(false);
+}) {
+  const { token, isLoading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    const checkAuth = () => {
-      const authenticated = isAuthenticated();
-      
-      if (!authenticated) {
-        // Si no hay token, redirigir a login
-        router.push('/pages/login');
-        return;
-      }
-      
-      setIsAuth(true);
-      setIsLoading(false);
-    };
+    if (!isLoading && !token) {
+      router.push("/login");
+    }
+  }, [isLoading, token, router]);
 
-    checkAuth();
-  }, [router]);
-
-  // Mostrar loader mientras verifica autenticación
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-indigo-600"></div>
+        <p className="text-gray-500">Cargando sesión...</p>
       </div>
     );
   }
 
-  // Si no está autenticado, no mostrar nada (ya redirigió)
-  if (!isAuth) {
-    return null;
-  }
-
-  // Si está autenticado, mostrar el contenido
   return <>{children}</>;
 }
