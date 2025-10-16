@@ -42,7 +42,7 @@ export default function LoginPage() {
         <p className="text-center text-gray-600 text-sm mb-6">
           ¿No tienes una cuenta?{" "}
           <a
-            href="/pages/register"
+            href="/register"
             className="text-blue-500 hover:text-blue-600 font-medium"
           >
             Regístrate
@@ -72,24 +72,6 @@ export default function LoginPage() {
             />
           </div>
 
-          <div className="flex items-center justify-between text-sm">
-            <label className="flex items-center cursor-pointer">
-              <input
-                type="checkbox"
-                checked={rememberMe}
-                onChange={(e) => setRememberMe(e.target.checked)}
-                className="w-4 h-4 text-blue-500 border-gray-300 rounded focus:ring-blue-500"
-              />
-              <span className="ml-2 text-gray-700">Recuérdame</span>
-            </label>
-            <a
-              href="/forgot-password"
-              className="text-blue-500 hover:text-blue-600 font-medium"
-            >
-              ¿Olvidaste tu contraseña?
-            </a>
-          </div>
-
           <button
             type="submit"
             disabled={isLoading}
@@ -97,6 +79,11 @@ export default function LoginPage() {
           >
             {isLoading ? "Iniciando sesión..." : "Iniciar sesión"}
           </button>
+          {error && (
+            <div className="mt-4 text-center text-sm text-red-600 bg-red-100 p-2 rounded-md border border-red-300">
+              {error}
+            </div>
+          )}
         </form>
       </div>
     </div>
