@@ -6,8 +6,7 @@ from .user_profiles import (
     UserProfileBase,
 )
 from .products import ProductOut, ProductCreate, ProductUpdate, ProductBase
-from .carts import Cart, CartCreate, CartUpdate, CartBase
-from .cart_items import CartItem, CartItemCreate, CartItemUpdate, CartItemBase
+from .carts import CartItemBase, CartItemCreate, CartItemUpdate, CartItemResponse
 from .orders import Order, OrderCreate, OrderUpdate, OrderBase
 from .order_items import OrderItem, OrderItemCreate, OrderItemUpdate, OrderItemBase
 from .tracking import Tracking, TrackingCreate, TrackingUpdate, TrackingBase
@@ -29,15 +28,10 @@ __all__ = [
     "ProductUpdate",
     "ProductBase",
     # cart
-    "Cart",
-    "CartCreate",
-    "CartUpdate",
-    "CartBase",
-    # cart item
-    "CartItem",
+    "CartItemBase",
     "CartItemCreate",
     "CartItemUpdate",
-    "CartItemBase",
+    "CartItemResponse",
     # order
     "Order",
     "OrderCreate",
