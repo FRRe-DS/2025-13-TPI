@@ -7,8 +7,7 @@ from .user_profiles import (
 )
 from .products import ProductOut, ProductCreate, ProductUpdate, ProductBase
 from .carts import CartItemBase, CartItemCreate, CartItemUpdate, CartItemResponse
-from .orders import Order, OrderCreate, OrderUpdate, OrderBase
-from .order_items import OrderItem, OrderItemCreate, OrderItemUpdate, OrderItemBase
+from .orders import OrderStatus, OrderItemBase, OrderListItem, OrderItemOut, OrderOut
 from .tracking import Tracking, TrackingCreate, TrackingUpdate, TrackingBase
 
 __all__ = [
@@ -33,15 +32,11 @@ __all__ = [
     "CartItemUpdate",
     "CartItemResponse",
     # order
-    "Order",
-    "OrderCreate",
-    "OrderUpdate",
-    "OrderBase",
-    # order item
-    "OrderItem",
-    "OrderItemCreate",
-    "OrderItemUpdate",
+    "OrderStatus",
     "OrderItemBase",
+    "OrderListItem",
+    "OrderItemOut",
+    "OrderOut",
     # tracking
     "Tracking",
     "TrackingCreate",
