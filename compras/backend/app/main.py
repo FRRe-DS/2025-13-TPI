@@ -4,7 +4,7 @@ from app.models import products as product_model  # Asegura que el modelo se reg
 from app.models import carts as cart_item_model
 from app.models import order_item as order_item_model
 from app.routers import product as product_router
-from app.routers import auth
+from app.routers import auth, cart
 from starlette.middleware.cors import CORSMiddleware
 from app.core.config import settings
 
@@ -17,7 +17,7 @@ Base.metadata.create_all(bind=engine)
 #app.include_router(auth.router, prefix="/api/auth", tags=["Auth"])
 app.include_router(product_router.router)
 app.include_router(auth.router)
-#app.include_router(shopcart.router, prefix="/api/shopcart", tags=["ShopCart"])
+app.include_router(cart.router)
 #app.include_router(booking.router, prefix="/api/booking", tags=["Booking"])
 #app.include_router(tracking.router, prefix="/api/tracking", tags=["Tracking"])
 
