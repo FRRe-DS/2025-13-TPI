@@ -1,23 +1,23 @@
-from typing import Optional
-from pydantic import BaseModel
+from pydantic import BaseModel, conint, condecimal
+from typing import List
+from decimal import Decimal
 
+class CartItemBase(BaseModel):
+    product_id: int
+    quantity: conint(ge=1)
 
-class CartBase(BaseModel):
-    total: Optional[int] = None
+class CartItemCreate(CartItemBase):
+    pass
 
+class CartItemUpdate(BaseModel):
+    quantity: conint(ge=1)
 
-class CartCreate(CartBase):
-    userId: int
+class CartItemResponse(BaseModel):
+    product_id: int
+    name: str
+    quantity: int
+    unit_price: condecimal(max_digits=10, decimal_places=2)
+    line_total: condecimal(max_digits=10, decimal_places=2)
 
-
-class CartUpdate(BaseModel):
-    total: Optional[int] = None
-
-
-class Cart(CartBase):
-    id: int
-    userId: Optional[int] = None
-
-    class Config:
-        orm_mode = True
-
+    class Confing:
+        from_attributes = True
