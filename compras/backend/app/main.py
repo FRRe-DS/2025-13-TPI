@@ -4,7 +4,7 @@ from app.models import products as product_model  # Asegura que el modelo se reg
 from app.models import cart_item as cart_item_model
 from app.models import order_item as order_item_model
 from app.routers import product as product_router
-from app.routers import auth
+#from app.routers import auth
 
 app = FastAPI(title="Backend Compras", version="1.0")
 
@@ -12,7 +12,7 @@ app = FastAPI(title="Backend Compras", version="1.0")
 Base.metadata.create_all(bind=engine)
 
 # Incluir routers
-app.include_router(auth.router, prefix="/api/auth", tags=["Auth"])
+#app.include_router(auth.router, prefix="/api/auth", tags=["Auth"])
 app.include_router(product_router.router)
 #app.include_router(shopcart.router, prefix="/api/shopcart", tags=["ShopCart"])
 #app.include_router(booking.router, prefix="/api/booking", tags=["Booking"])
