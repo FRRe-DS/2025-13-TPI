@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from app.schemas.products import ProductOut, ProductCreate, ProductUpdate
 from app.crud.product import list_products, get_product, create_product, update_product, delete_product
 from app.db import SessionLocal
+from app.routers.auth import get_current_user
 
 router = APIRouter(prefix="/api/product", tags=["Frontend - Productos"])
 
@@ -36,7 +37,7 @@ def get_product_by_id(product_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Producto no encontrado")
     return p
 
-@router.post("", response_model=ProductOut, status_code=status.HTTP_201_CREATED)
+@router.post("", dependencies=[Depends(get_current_user)], response_model=ProductOut, status_code=status.HTTP_201_CREATED)
 def create_product_endpoint(data: ProductCreate, db: Session = Depends(get_db)):
     try:
         return create_product(db, data)
