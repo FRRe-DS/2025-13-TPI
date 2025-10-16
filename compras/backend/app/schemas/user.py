@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 from typing import Optional
 
 
@@ -10,7 +10,7 @@ class UserBase(BaseModel):
 
 class UserCreate(UserBase):
     email: EmailStr
-    password: str
+    password: str = Field(min_length=8, max_length=64)
     firstName: Optional[str] = None
     lastName: Optional[str] = None
 
@@ -33,5 +33,5 @@ class User(UserBase):
 
 class UserOut(UserBase):
     id: int
-    is_active: bool
-    is_admin: bool
+    #is_active: bool
+    #is_admin: bool

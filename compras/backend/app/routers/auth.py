@@ -16,6 +16,10 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 def register(payload: UserCreate, db: Session = Depends(get_db)):
     if get_by_email(db, payload.email):
         raise HTTPException(status_code=400, detail="Email ya registrado")
+    if not payload.password or not isinstance(payload.password, str):
+        raise HTTPException(status_code=422, detail="Requiere contraseña válida")
+    if len(payload.password.encode("utf-8")) > 64:
+        raise HTTPException(status_code=422, detail="La contraseña es demasiado larga")
     user = create_user(db, payload)
     return UserOut(
         id=user.id,
