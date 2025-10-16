@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from app.db import engine, Base
 from app.models import products as product_model  # Asegura que el modelo se registre
-from app.models import cart_item as cart_item_model
+from app.models import carts as cart_item_model
 from app.models import order_item as order_item_model
 from app.routers import product as product_router
 from app.routers import auth
