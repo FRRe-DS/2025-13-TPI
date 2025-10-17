@@ -7,11 +7,8 @@ from app.models import products as product_model  # Asegura que el modelo se reg
 from app.models import product_image as product_image_model
 from app.models import carts as cart_item_model
 from app.routers import product as product_router
-<<<<<<< HEAD
 from app.routers import category as category_router
-=======
 from app.routers import product_images as product_image_router
->>>>>>> f46f4b1759f0cc39310077c7aa5e425ace712de5
 from app.routers import auth, cart, orders
 from starlette.middleware.cors import CORSMiddleware
 from app.core.config import settings

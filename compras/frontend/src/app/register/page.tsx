@@ -1,14 +1,14 @@
-"use client";
-import React, { useState } from "react";
-import { useRouter } from "next/navigation";
+'use client';
+import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function Signup() {
   const router = useRouter();
   const [formData, setFormData] = useState({
-    nombre: "",
-    apellido: "",
-    email: "",
-    password: "",
+    nombre: '',
+    apellido: '',
+    email: '',
+    password: '',
   });
 
   const [error, setError] = useState<string | null>(null);
@@ -28,10 +28,10 @@ export default function Signup() {
     setIsLoading(true);
 
     try {
-      const res = await fetch("http://127.0.0.1:8000/auth/register", {
-        method: "POST",
+      const res = await fetch('http://127.0.0.1:8000/auth/register', {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           email: formData.email,
@@ -44,19 +44,18 @@ export default function Signup() {
       if (!res.ok) {
         const errorData = await res.json().catch(() => ({}));
 
-        if (res.status === 400) throw new Error("El Correo ya está registrado");
-        if (res.status === 422)
-          throw new Error("Los datos enviados no son válidos");
-        if (res.status >= 500) throw new Error("Error interno del servidor");
+        if (res.status === 400) throw new Error('El Correo ya está registrado');
+        if (res.status === 422) throw new Error('Los datos enviados no son válidos');
+        if (res.status >= 500) throw new Error('Error interno del servidor');
 
-        throw new Error(errorData.detail || "Error al registrarse");
+        throw new Error(errorData.detail || 'Error al registrarse');
       }
       const data = await res.json();
-      setSuccess("Cuenta creada exitosamente! Redirigiendo...");
-      localStorage.setItem("token", data.access_token);
-      setTimeout(() => router.push("/dashboard"), 1500);
+      setSuccess('Cuenta creada exitosamente! Redirigiendo...');
+      localStorage.setItem('token', data.access_token);
+      setTimeout(() => router.push('/dashboard'), 1500);
     } catch (err: any) {
-      setError(err.message || "Error al registrarse");
+      setError(err.message || 'Error al registrarse');
     } finally {
       setIsLoading(false);
     }
@@ -67,16 +66,11 @@ export default function Signup() {
       <main className="flex items-center justify-center px-4 py-4">
         <div className="w-full max-w-md">
           <div className="text-center mb-4">
-            <h2 className="text-3xl font-bold text-gray-900 mb-2 py-2">
-              Crear una cuenta nueva
-            </h2>
+            <h2 className="text-3xl font-bold text-gray-900 mb-2 py-2">Crear una cuenta nueva</h2>
             <p className="text-gray-500">
               ¿Ya tienes una cuenta?
-              <a
-                href="/login"
-                className="text-blue-500 hover:underline font-medium"
-              >
-                {" "}
+              <a href="/login" className="text-blue-500 hover:underline font-medium">
+                {' '}
                 Inicia sesión
               </a>
             </p>
@@ -85,10 +79,7 @@ export default function Signup() {
             <div className="space-y-6">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label
-                    htmlFor="nombre"
-                    className="block text-sm font-medium text-gray-700 mb-1"
-                  >
+                  <label htmlFor="nombre" className="block text-sm font-medium text-gray-700 mb-1">
                     Nombre
                   </label>
                   <input
@@ -121,10 +112,7 @@ export default function Signup() {
               </div>
 
               <div>
-                <label
-                  htmlFor="email"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
+                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
                   Correo electrónico
                 </label>
                 <input
@@ -139,10 +127,7 @@ export default function Signup() {
               </div>
 
               <div>
-                <label
-                  htmlFor="password"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
+                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
                   Contraseña
                 </label>
                 <input
@@ -172,11 +157,7 @@ export default function Signup() {
                   {success}
                 </div>
               )}
-              {isLoading && (
-                <div className="text-sm text-center text-gray-600">
-                  Procesando...
-                </div>
-              )}
+              {isLoading && <div className="text-sm text-center text-gray-600">Procesando...</div>}
             </div>
           </div>
         </div>

@@ -1,11 +1,33 @@
 "use client";
 
+import Image from "next/image";
 import { useState, useEffect, useRef } from "react";
-import { Search, ShoppingCart, User, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, ShoppingCart, User } from "lucide-react";
+
+// Minimal types to avoid `any` usage in this file
+interface ProductImage {
+  url?: string;
+  is_primary?: boolean;
+}
+
+interface Product {
+  id: number | string;
+  name: string;
+  price?: number;
+  stock?: number;
+  main_image_url?: string | null;
+  images?: ProductImage[];
+}
+
+interface Category {
+  id: number | string;
+  name: string;
+  description?: string;
+}
 
 export default function Compras() {
-  const [productos, setProductos] = useState<any[]>([]);
-  const [categorias, setCategorias] = useState([]);
+  const [productos, setProductos] = useState<Product[]>([]);
+  const [categorias, setCategorias] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const carouselRef = useRef<HTMLDivElement>(null);
@@ -29,8 +51,8 @@ export default function Compras() {
 
         setCategorias(catsData);
         setProductos(prodData);
-      } catch (err: any) {
-        setError(err.message);
+      } catch (err: unknown) {
+        setError(err instanceof Error ? err.message : String(err));
       } finally {
         setLoading(false);
       }
@@ -128,7 +150,7 @@ if (loading || error) {
           <p className="text-gray-500">No hay categorías disponibles.</p>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            {categorias.slice(0, 4).map((categoria: any) => (
+            {categorias.slice(0, 4).map((categoria: Category) => (
               <div key={categoria.id} className="group cursor-pointer">
                 <div className="bg-gradient-to-br from-gray-100 to-gray-200 aspect-square rounded-xl flex items-center justify-center mb-3 group-hover:shadow-lg transition-shadow overflow-hidden">
                   <span className="text-5xl">📦</span>
@@ -168,21 +190,32 @@ if (loading || error) {
                 className="flex gap-6 overflow-x-auto scrollbar-hide pb-4 px-2"
                 style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
               >
-                {[...productos, ...productos].map((p, index) => (
-                  <div
-                    key={`${p.id}-${index}`}
-                    className="flex-none w-64 bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all cursor-pointer hover:scale-105"
-                  >
-                    <div className="aspect-square flex items-center justify-center bg-gradient-to-br from-blue-50 to-blue-100">
-                      <span className="text-6xl">🛍️</span>
+                {[...productos, ...productos].map((p: Product, index: number) => {
+                  const primary = p.images?.find((img: ProductImage) => img.is_primary)?.url;
+                  const src = p.main_image_url || (primary ? `http://127.0.0.1:8000${primary}` : '/placeholder.png');
+
+                  return (
+                    <div
+                      key={`${p.id}-${index}`}
+                      className="flex-none w-64 bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all cursor-pointer hover:scale-105"
+                    >
+                      <div className="aspect-square relative bg-gradient-to-br from-blue-50 to-blue-100 overflow-hidden rounded-t-xl">
+                        <Image
+                          src={src}
+                          alt={p.name}
+                          fill
+                          unoptimized
+                          className="object-cover object-center"
+                        />
+                      </div>
+                      <div className="p-4">
+                        <h3 className="font-medium text-gray-900 mb-1 truncate">{p.name}</h3>
+                        <p className="text-sm text-gray-600">Precio: ${p.price}</p>
+                        <p className="text-sm text-gray-500">Stock: {p.stock}</p>
+                      </div>
                     </div>
-                    <div className="p-4">
-                      <h3 className="font-medium text-gray-900 mb-1 truncate">{p.name}</h3>
-                      <p className="text-sm text-gray-600">Precio: ${p.price}</p>
-                      <p className="text-sm text-gray-500">Stock: {p.stock}</p>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
             </div>

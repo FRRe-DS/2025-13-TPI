@@ -1,13 +1,8 @@
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
 
-export async function apiFetch(
-  endpoint: string,
-  options: RequestInit = {},
-  authToken?: string
-) {
+export async function apiFetch(endpoint: string, options: RequestInit = {}, authToken?: string) {
   const headers: HeadersInit = {
-    "Content-Type": "application/json",
+    'Content-Type': 'application/json',
     ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
   };
 

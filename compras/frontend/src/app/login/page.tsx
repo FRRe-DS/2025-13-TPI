@@ -1,15 +1,15 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { User } from "lucide-react";
-import { useAuth } from "@/context/AuthContext";
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { User } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
 
 export default function LoginPage() {
   const router = useRouter();
   const { login, isLoading } = useAuth();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -19,10 +19,10 @@ export default function LoginPage() {
 
     try {
       await login(email, password);
-      router.push("/dashboard"); // redirige al panel
+      router.push('/dashboard'); // redirige al panel
     } catch (err: any) {
       // salta el catch si hay error y emite el mensaje
-      setError(err.message || "Error al iniciar sesión");
+      setError(err.message || 'Error al iniciar sesión');
     }
   };
 
@@ -40,11 +40,8 @@ export default function LoginPage() {
         </h2>
 
         <p className="text-center text-gray-600 text-sm mb-6">
-          ¿No tienes una cuenta?{" "}
-          <a
-            href="/register"
-            className="text-blue-500 hover:text-blue-600 font-medium"
-          >
+          ¿No tienes una cuenta?{' '}
+          <a href="/register" className="text-blue-500 hover:text-blue-600 font-medium">
             Regístrate
           </a>
         </p>
@@ -77,7 +74,7 @@ export default function LoginPage() {
             disabled={isLoading}
             className="w-full bg-blue-500 hover:bg-blue-600 text-white font-medium py-3 rounded-md transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isLoading ? "Iniciando sesión..." : "Iniciar sesión"}
+            {isLoading ? 'Iniciando sesión...' : 'Iniciar sesión'}
           </button>
           {error && (
             <div className="mt-4 text-center text-sm text-red-600 bg-red-100 p-2 rounded-md border border-red-300">
