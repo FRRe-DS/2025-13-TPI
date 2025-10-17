@@ -121,16 +121,6 @@ export default function ProductoDetalle() {
                 <button className="flex-1 bg-gray-900 text-white py-4 px-8 rounded hover:bg-gray-800 transition-all font-medium tracking-wide">
                   Add to Cart
                 </button>
-                <button
-                  onClick={() => setFavorito(!favorito)}
-                  className={`w-14 h-14 rounded border-2 transition-all flex items-center justify-center ${
-                    favorito
-                      ? 'border-red-500 bg-red-50 text-red-500'
-                      : 'border-gray-300 text-gray-400 hover:border-gray-900 hover:text-gray-900'
-                  }`}
-                >
-                  <Heart className={`w-5 h-5 ${favorito ? 'fill-current' : ''}`} />
-                </button>
               </div>
             </div>
 
