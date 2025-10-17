@@ -4,10 +4,11 @@ venv/
 
 # === Archivos de compilación ===
 __pycache__/
-*.pyc
+*.py[cod]
 *.pyo
 *.pyd
 *.py[cod]
+
 
 # === VS Code y PyCharm ===
 .vscode/
