@@ -141,9 +141,8 @@ export default function ProductoDetalle() {
                     producto.stock > 0 ? 'text-green-600' : 'text-red-600'
                   }`}
                 >
-                  {producto.stock > 0 and ? 'En Stock' : 'Agotado'}
-                    
-                  }{producto.stock < 6 ? 'Pocas unidades disponibles' : ''}
+                  {producto.stock == 0 ? 'Agotado' : ''}
+                  {producto.stock < 6 ? 'Pocas unidades disponibles' : 'En stock'}
 
                 </div>
               </div>
