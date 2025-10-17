@@ -139,12 +139,13 @@ export default function ProductoDetalle() {
                 <div
                   className={`text-sm font-medium ${
                     producto.stock > 0 ? 'text-green-600' : 'text-red-600'
-                  }`}
+                  }
+                  ${producto.stock < 6 && producto.stock > 0 ? 'text-yellow-600' : ''}`}
                 >
                   {producto.stock == 0 ? 'Agotado' : ''}
-                  {producto.stock < 6 ? 'Pocas unidades disponibles' : 'En stock'}
-
+                  {producto.stock < 6 ? 'Ultimas Unidades' : 'En stock'}
                 </div>
+                
               </div>
               <div>
                 <div className="text-xs text-gray-500 uppercase tracking-wider mb-1">
@@ -162,36 +163,24 @@ export default function ProductoDetalle() {
             <div className="space-y-4">
               <div>
                 <label className="text-sm font-medium text-gray-900 mb-2 block">
-                  Quantity
+                  Cantidad
                 </label>
                 <div className="flex items-center gap-3">
-                  <button
-                    onClick={() => setCantidad(Math.max(1, cantidad - 1))}
-                    className="w-10 h-10 border border-gray-300 rounded flex items-center justify-center hover:bg-gray-50 transition-colors"
-                  >
-                    -
-                  </button>
                   <input
                     type="number"
                     value={cantidad}
                     onChange={(e) =>
                       setCantidad(Math.max(1, parseInt(e.target.value) || 1))
                     }
-                    className="w-16 text-center border border-gray-300 rounded h-10 focus:outline-none focus:ring-2 focus:ring-gray-900"
+                    className="w-16 text-center text-gray-900 border border-gray-300 rounded h-10 focus:outline-none focus:ring-2 focus:ring-gray-900"
                   />
-                  <button
-                    onClick={() => setCantidad(cantidad + 1)}
-                    className="w-10 h-10 border border-gray-300 rounded flex items-center justify-center hover:bg-gray-50 transition-colors"
-                  >
-                    +
-                  </button>
                 </div>
               </div>
 
               {/* Botones de Acción */}
               <div className="flex gap-3">
                 <button className="flex-1 bg-gray-900 text-white py-4 px-8 rounded hover:bg-gray-800 transition-all font-medium tracking-wide">
-                  Add to Cart
+                  Añadir al Carrito
                 </button>
               </div>
             </div>
