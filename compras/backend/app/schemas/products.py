@@ -1,6 +1,7 @@
 from typing import Optional, Annotated
 from decimal import Decimal
 from pydantic import BaseModel, Field, field_validator
+from app.schemas.images import ProductImageOut
 
 
 # Definimos un alias de tipo para reusar:
@@ -35,6 +36,14 @@ class ProductUpdate(BaseModel):
 
 class ProductOut(ProductBase):
     id: int
+    name: str
+    description: Optional[str] = None
+    price: Price
+    sku: Optional[str] = None
+    stock: Optional[int] = None
+    category: Optional[str] = None
+    main_image_url: Optional[str] = None
+    images: list[ProductImageOut] = []
     class Config:
         from_attributes = True
 

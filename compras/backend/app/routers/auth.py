@@ -36,7 +36,8 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(),
     user = authenticate(db, form_data.username, form_data.password)
     if not user:
         raise HTTPException(status_code=401, detail="credenciales inválidas")
-    return Token(access_token=create_access_token(subject=user.id))
+    token = create_access_token(subject=user.id)
+    return {"access_token": token, "token_type": "bearer"}
 
 
 
