@@ -40,7 +40,8 @@ def login(payload: UserLogin, db: Session = Depends(get_db)):
     user = authenticate(db, payload.email, payload.password)
     if not user:
         raise HTTPException(status_code=401, detail="credenciales inválidas")
-    return Token(access_token=create_access_token(subject=user.id))
+    token = create_access_token(subject=user.id)
+    return {"access_token": token, "token_type": "bearer"}
 
 
 
