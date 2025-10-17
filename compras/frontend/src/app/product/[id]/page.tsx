@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { ChevronRight } from 'lucide-react';
 
@@ -15,81 +15,188 @@ interface Product {
   images?: string[];
 }
 
-export default function ProductDetailPage() {
+export default function ProductoDetalle() {
   const { id } = useParams();
-  const [product, setProduct] = useState<Product | null>(null);
+  const [producto, setProducto] = useState<Product | null>(null);
+  const [imagenSeleccionada, setImagenSeleccionada] = useState(0);
+  const [cantidad, setCantidad] = useState(1);
   const [loading, setLoading] = useState(true);
-  const [imageIndex, setImageIndex] = useState(0);
 
+  
   useEffect(() => {
     if (!id) return;
-    fetch(`http://localhost:8000/products/${id}`)
+    fetch(`http://localhost:8000/api/product/${id}`)
       .then((res) => res.json())
-      .then((data) => setProduct(data))
-      .catch((err) => console.error('Error al cargar producto:', err))
+      .then((data) => {
+        setProducto(data);
+      })
+      .catch((err) => console.error('Error al obtener el producto:', err))
       .finally(() => setLoading(false));
   }, [id]);
 
-  if (loading) return <div className="p-10 text-gray-500">Cargando producto...</div>;
-  if (!product) return <div className="p-10 text-gray-500">Producto no encontrado</div>;
+  if (loading) {
+    return <div className="p-10 text-gray-500">Cargando producto...</div>;
+  }
 
-  const images = product.images && product.images.length > 0
-    ? product.images
-    : [product.main_image_url || ''];
+  if (!producto) {
+    return <div className="p-10 text-gray-500">Producto no encontrado.</div>;
+  }
+
+  
+  const imagenes =
+    producto.images && producto.images.length > 0
+      ? producto.images.map((img) => ({ url: img }))
+      : producto.main_image_url
+      ? [{ url: producto.main_image_url }]
+      : [
+          { url: '/placeholder.png' },
+          { url: '/placeholder.png' },
+          { url: '/placeholder.png' },
+        ];
 
   return (
-    <div className="max-w-7xl mx-auto px-6 py-10">
-      {/* Breadcrumb */}
-      <nav className="flex items-center gap-2 text-sm mb-8">
-        <a href="/product" className="text-gray-500 hover:text-gray-900">Productos</a>
-        <ChevronRight className="w-4 h-4 text-gray-400" />
-        <span className="text-gray-900 font-medium">{product.name}</span>
-      </nav>
+    <div className="min-h-screen bg-white">
+      <div className="max-w-7xl mx-auto px-6 py-8">
+        {/* Breadcrumb Premium */}
+        <nav className="flex items-center gap-2 text-sm mb-10">
+          <a href="/" className="text-gray-500 hover:text-gray-900 transition-colors">Home</a>
+          <ChevronRight className="w-4 h-4 text-gray-400" />
+          <a href="/product" className="text-gray-500 hover:text-gray-900 transition-colors">
+            {producto.category || 'Categoría'}
+          </a>
+          <ChevronRight className="w-4 h-4 text-gray-400" />
+          <span className="text-gray-900 font-medium">{producto.name}</span>
+        </nav>
 
-      <div className="grid lg:grid-cols-2 gap-12">
-        {/* Imagen principal */}
-        <div className="space-y-4">
-          <div className="aspect-square border rounded-lg flex items-center justify-center overflow-hidden">
-            {images[imageIndex] ? (
-              <img src={images[imageIndex]} alt={product.name} className="object-contain w-full h-full" />
-            ) : (
-              <span className="text-8xl">🖼️</span>
-            )}
+        <div className="grid lg:grid-cols-12 gap-16">
+          {/* Galería de Imágenes - 7 columnas */}
+          <div className="lg:col-span-7 space-y-6">
+            {/* Imagen Principal */}
+            <div className="rounded-lg overflow-hidden aspect-[10/9] flex items-center justify-center shadow-sm border border-gray-200 bg-gray-50">
+              <img
+                src={imagenes[imagenSeleccionada].url}
+                alt={producto.name}
+                className="object-contain w-full h-full"
+                onError={(e) => (e.currentTarget.src = '/placeholder.png')}
+              />
+            </div>
+
+            {/* Miniaturas Premium */}
+            <div className="grid grid-cols-5 gap-4">
+              {imagenes.map((img, index) => (
+                <button
+                  key={index}
+                  onClick={() => setImagenSeleccionada(index)}
+                  className={`aspect-square w-20 h-20 rounded-lg flex items-center justify-center text-5xl transition-all border-2 overflow-hidden ${
+                    imagenSeleccionada === index
+                      ? 'border-gray-900 shadow-md'
+                      : 'border-gray-200 opacity-60 hover:opacity-100 hover:border-gray-400'
+                  }`}
+                >
+                  <img
+                    src={img.url}
+                    alt={`Imagen ${index + 1}`}
+                    className="object-cover w-full h-full"
+                    onError={(e) => (e.currentTarget.src = '/placeholder.png')}
+                  />
+                </button>
+              ))}
+            </div>
           </div>
 
-          {/* Miniaturas */}
-          <div className="flex gap-3">
-            {images.map((img, i) => (
-              <button
-                key={i}
-                onClick={() => setImageIndex(i)}
-                className={`w-20 h-20 rounded-lg border-2 overflow-hidden transition-all ${
-                  imageIndex === i
-                    ? 'border-gray-900 shadow-md'
-                    : 'border-gray-200 opacity-60 hover:opacity-100 hover:border-gray-400'
-                }`}
-              >
-                <img src={img} alt="" className="object-cover w-full h-full" />
-              </button>
-            ))}
+          <div className="lg:col-span-5 space-y-8">
+            <div className="space-y-4">
+              <h1 className="text-3xl lg:text-4xl font-light tracking-tight text-gray-900">
+                {producto.name}
+              </h1>
+              <p className="text-gray-600 leading-relaxed">{producto.description}</p>
+            </div>
+
+            {/* Precio */}
+            <div className="py-6 border-y border-gray-200">
+              <div className="text-3xl font-light text-gray-900">
+                ${producto.price}
+              </div>
+              <p className="text-sm text-gray-500 mt-1">
+                Tax included. Shipping calculated at checkout.
+              </p>
+            </div>
+
+            {/* Product Information Grid */}
+            <div className="grid grid-cols-2 gap-4 py-6 border-b border-gray-200">
+              <div>
+                <div className="text-xs text-gray-500 uppercase tracking-wider mb-1">
+                  SKU
+                </div>
+                <div className="text-sm font-medium text-gray-900">
+                  {producto.sku || 'N/A'}
+                </div>
+              </div>
+              <div>
+                <div className="text-xs text-gray-500 uppercase tracking-wider mb-1">
+                  Disponibilidad
+                </div>
+                <div
+                  className={`text-sm font-medium ${
+                    producto.stock > 0 ? 'text-green-600' : 'text-red-600'
+                  }`}
+                >
+                  {producto.stock > 0 and ? 'En Stock' : 'Agotado'}
+                    
+                  }{producto.stock < 6 ? 'Pocas unidades disponibles' : ''}
+
+                </div>
+              </div>
+              <div>
+                <div className="text-xs text-gray-500 uppercase tracking-wider mb-1">
+                  Categoría
+                </div>
+                <div className="text-sm font-medium text-gray-900">
+                  {producto.category}
+                </div>
+              </div>
+              <div>
+              </div>
+            </div>
+
+            {/* Selector de cantidad */}
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-medium text-gray-900 mb-2 block">
+                  Quantity
+                </label>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => setCantidad(Math.max(1, cantidad - 1))}
+                    className="w-10 h-10 border border-gray-300 rounded flex items-center justify-center hover:bg-gray-50 transition-colors"
+                  >
+                    -
+                  </button>
+                  <input
+                    type="number"
+                    value={cantidad}
+                    onChange={(e) =>
+                      setCantidad(Math.max(1, parseInt(e.target.value) || 1))
+                    }
+                    className="w-16 text-center border border-gray-300 rounded h-10 focus:outline-none focus:ring-2 focus:ring-gray-900"
+                  />
+                  <button
+                    onClick={() => setCantidad(cantidad + 1)}
+                    className="w-10 h-10 border border-gray-300 rounded flex items-center justify-center hover:bg-gray-50 transition-colors"
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+
+              {/* Botones de Acción */}
+              <div className="flex gap-3">
+                <button className="flex-1 bg-gray-900 text-white py-4 px-8 rounded hover:bg-gray-800 transition-all font-medium tracking-wide">
+                  Add to Cart
+                </button>
+              </div>
+            </div>
           </div>
-        </div>
-
-        {/* Detalle del producto */}
-        <div className="space-y-6">
-          <h1 className="text-3xl font-light text-gray-900">{product.name}</h1>
-          <p className="text-gray-600 leading-relaxed">{product.description}</p>
-          <div className="text-3xl font-semibold text-gray-900">${product.price}</div>
-
-          <div className="text-sm text-gray-500">
-            <p>SKU: {product.sku}</p>
-            <p>Categoría: {product.category}</p>
-            <p>Stock: {product.stock > 0 ? 'Disponible' : 'Agotado'}</p>
-          </div>
-
-          <button className="bg-gray-900 text-white px-6 py-3 rounded hover:bg-gray-800 transition">
-            Agregar al carrito
-          </button>
         </div>
       </div>
     </div>
