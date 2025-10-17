@@ -109,19 +109,14 @@ export default function ProductoDetalle() {
               <h1 className="text-3xl lg:text-4xl font-light tracking-tight text-gray-900">
                 {producto.name}
               </h1>
-              <p className="text-gray-600 leading-relaxed">{producto.description}</p>
-            </div>
-
-            {/* Precio */}
-            <div className="py-6 border-y border-gray-200">
               <div className="text-3xl font-light text-gray-900">
                 ${producto.price}
               </div>
-              <p className="text-sm text-gray-500 mt-1">
-                Tax included. Shipping calculated at checkout.
-              </p>
             </div>
-
+            <div className="py-6 border-y border-gray-200">
+              <h1 className="text-lg font-medium text-gray-500 mb-2">Descripción</h1>
+              <p className="text-black leading-relaxed">{producto.description}</p>
+            </div>
             {/* Product Information Grid */}
             <div className="grid grid-cols-2 gap-4 py-6 border-b border-gray-200">
               <div>
