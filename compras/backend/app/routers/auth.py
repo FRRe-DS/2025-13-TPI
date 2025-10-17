@@ -35,11 +35,11 @@ def register(payload: UserCreate, db: Session = Depends(get_db)):
     }
 
 
-@router.post("/login", response_model=Token)
-def login(payload: UserLogin, db: Session = Depends(get_db)):
-    user = authenticate(db, payload.email, payload.password)
+@router.post("/login")
+def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+    user = authenticate(db, form_data.username, form_data.password)
     if not user:
-        raise HTTPException(status_code=401, detail="credenciales inválidas")
+        raise HTTPException(status_code=401, detail="Invalid credentials")
     token = create_access_token(subject=user.id)
     return {"access_token": token, "token_type": "bearer"}
 
