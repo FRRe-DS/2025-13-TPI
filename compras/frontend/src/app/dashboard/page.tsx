@@ -189,6 +189,7 @@ if (loading || error) {
                 onMouseLeave={() => setIsPaused(false)}
                 className="flex gap-6 overflow-x-auto scrollbar-hide pb-4 px-2"
                 style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+        
               >
                 {[...productos, ...productos].map((p: Product, index: number) => {
                   const primary = p.images?.find((img: ProductImage) => img.is_primary)?.url;
