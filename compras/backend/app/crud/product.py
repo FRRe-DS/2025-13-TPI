@@ -36,7 +36,7 @@ def list_products(
     }.get(sort_by, Product.id)
     stmt = stmt.order_by(asc(sort_col) if sort_dir == "asc" else desc(sort_col))
 
-    stmt = stmt.offset(skip).limit(limit, 200)
+    stmt = stmt.offset(skip).limit(limit)
     return db.execute(stmt).scalars().all()
 
 def get_product(db: Session, product_id: int) -> Product | None:

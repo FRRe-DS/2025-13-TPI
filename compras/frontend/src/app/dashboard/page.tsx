@@ -3,8 +3,9 @@
 import { useState, useEffect, useRef } from "react";
 import { Search, ShoppingCart, User, ChevronLeft, ChevronRight } from "lucide-react";
 
-export default function TiendaEnLinea() {
+export default function Compras() {
   const [productos, setProductos] = useState<any[]>([]);
+  const [categorias, setCategorias] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const carouselRef = useRef<HTMLDivElement>(null);
@@ -12,69 +13,59 @@ export default function TiendaEnLinea() {
 
  
   useEffect(() => {
-    const fetchProducts = async () => {
+    const fetchData = async () => {
       try {
-        const token = localStorage.getItem("token");
+        const [resCat, resProd] = await Promise.all([
+          fetch("http://127.0.0.1:8000/api/category"),
+          fetch("http://127.0.0.1:8000/api/product"),
+        ]);
 
-        if (!token) {
-          setError("Sesión expirada. Por favor, inicia sesión nuevamente.");
-          setLoading(false);
-          return;
-        }
+        if (!resCat.ok || !resProd.ok) throw new Error("Error al cargar datos");
 
-        const res = await fetch("http://127.0.0.1:8000/api/products", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        });
+        const [catsData, prodData] = await Promise.all([
+          resCat.json(),
+          resProd.json(),
+        ]);
 
-        if (res.status === 401) {
-          throw new Error("Token inválido o sesión expirada. Inicia sesión nuevamente.");
-        }
-        if (!res.ok) throw new Error("Error al cargar productos.");
-
-        const data = await res.json();
-        setProductos(data);
+        setCategorias(catsData);
+        setProductos(prodData);
       } catch (err: any) {
-        console.error("Error al cargar productos:", err);
         setError(err.message);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchProducts();
+    fetchData();
   }, []);
 
-  
   useEffect(() => {
-    const container = carouselRef.current;
-    if (!container || isPaused) return;
+  const container = carouselRef.current;
+  if (!container || isPaused) return;
 
-    const autoScroll = setInterval(() => {
-      const maxScroll = container.scrollWidth - container.clientWidth;
-      if (container.scrollLeft >= maxScroll - 10) {
-        container.scrollTo({ left: 0, behavior: "smooth" });
-      } else {
-        container.scrollBy({ left: 1, behavior: "auto" });
-      }
-    }, 20);
+  const autoScroll = setInterval(() => {
+    const maxScroll = container.scrollWidth / 2; // solo la mitad, porque duplicamos productos
 
-    return () => clearInterval(autoScroll);
-  }, [isPaused]);
-
-  const scroll = (direction: "left" | "right") => {
-    const container = carouselRef.current;
-    if (!container) return;
-
-    const scrollAmount = 300;
-    if (direction === "left") {
-      container.scrollBy({ left: -scrollAmount, behavior: "smooth" });
+    if (container.scrollLeft >= maxScroll) {
+      // Reinicia al principio sin que se note (sin transición)
+      container.scrollTo({ left: 0, behavior: "auto" });
     } else {
-      container.scrollBy({ left: scrollAmount, behavior: "smooth" });
+      container.scrollBy({ left: 1, behavior: "auto" });
     }
-  };
+  }, 15);
+
+  return () => clearInterval(autoScroll);
+}, [isPaused]);
+
+
+if (loading || error) {
+  return (
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50">
+      {loading && <p className="text-gray-600 text-lg font-medium">Cargando datos...</p>}
+      {error && <p className="text-red-500 text-lg font-medium">{error}</p>}
+    </div>
+  );
+  }
 
   
   return (
@@ -118,7 +109,7 @@ export default function TiendaEnLinea() {
         </div>
       </header>
 
-      {/* Buscador */}
+      
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-12">
           <div className="relative max-w-2xl mx-auto">
@@ -131,6 +122,28 @@ export default function TiendaEnLinea() {
           </div>
         </div>
 
+         <section className="mb-12">
+        <h2 className="text-2xl font-bold text-gray-900 mb-6">Categorías Destacadas</h2>
+        {categorias.length === 0 ? (
+          <p className="text-gray-500">No hay categorías disponibles.</p>
+        ) : (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            {categorias.slice(0, 4).map((categoria: any) => (
+              <div key={categoria.id} className="group cursor-pointer">
+                <div className="bg-gradient-to-br from-gray-100 to-gray-200 aspect-square rounded-xl flex items-center justify-center mb-3 group-hover:shadow-lg transition-shadow overflow-hidden">
+                  <span className="text-5xl">📦</span>
+                </div>
+                <h2 className="text-center text-lg md:text-xl font-semibold text-gray-900 leading-tight">
+                  {categoria.name}
+                </h2>
+                <h3 className="text-center text-sm font-normal text-gray-500 mt-1">
+                  {categoria.description}
+                </h3>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
         {/* 🔹 Estado de carga / error */}
         {loading && (
           <p className="text-center text-gray-500 text-lg font-medium">Cargando productos...</p>
@@ -147,18 +160,6 @@ export default function TiendaEnLinea() {
             </div>
 
             <div className="relative group">
-              {/* Botón Izquierdo */}
-              <button
-                onClick={() => {
-                  setIsPaused(true);
-                  scroll("left");
-                  setTimeout(() => setIsPaused(false), 2000);
-                }}
-                className="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-12 h-12 rounded-full bg-white shadow-lg hover:shadow-xl transition-all flex items-center justify-center text-gray-700 hover:text-gray-900 opacity-0 group-hover:opacity-100 hover:scale-110 -translate-x-1/2"
-              >
-                <ChevronLeft className="w-6 h-6" />
-              </button>
-
               {/* Carrusel */}
               <div
                 ref={carouselRef}
@@ -167,9 +168,9 @@ export default function TiendaEnLinea() {
                 className="flex gap-6 overflow-x-auto scrollbar-hide pb-4 px-2"
                 style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
               >
-                {productos.map((p) => (
+                {[...productos, ...productos].map((p, index) => (
                   <div
-                    key={p.id}
+                    key={`${p.id}-${index}`}
                     className="flex-none w-64 bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all cursor-pointer hover:scale-105"
                   >
                     <div className="aspect-square flex items-center justify-center bg-gradient-to-br from-blue-50 to-blue-100">
@@ -184,17 +185,6 @@ export default function TiendaEnLinea() {
                 ))}
               </div>
 
-              {/* Botón Derecho */}
-              <button
-                onClick={() => {
-                  setIsPaused(true);
-                  scroll("right");
-                  setTimeout(() => setIsPaused(false), 2000);
-                }}
-                className="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-12 h-12 rounded-full bg-white shadow-lg hover:shadow-xl transition-all flex items-center justify-center text-gray-700 hover:text-gray-900 opacity-0 group-hover:opacity-100 hover:scale-110 translate-x-1/2"
-              >
-                <ChevronRight className="w-6 h-6" />
-              </button>
             </div>
           </section>
         )}
