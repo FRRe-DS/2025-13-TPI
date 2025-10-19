@@ -10,7 +10,6 @@ export default function LoginPage() {
   const { login, isLoading } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -20,10 +19,14 @@ export default function LoginPage() {
     try {
       await login(email, password);
       router.push('/dashboard'); // redirige al panel
-    } catch (err: any) {
-      // salta el catch si hay error y emite el mensaje
-      setError(err.message || 'Error al iniciar sesión');
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+      setError(err.message);
+     } else {
+       setError('Error al iniciar sesión');
     }
+}
+
   };
 
   return (

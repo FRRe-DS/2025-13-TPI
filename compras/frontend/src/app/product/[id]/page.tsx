@@ -2,6 +2,8 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { ChevronRight } from 'lucide-react';
+import Link from 'next/link';
+import Image from 'next/image';
 
 interface Product {
   id: number;
@@ -59,11 +61,11 @@ export default function ProductoDetalle() {
       <div className="max-w-7xl mx-auto px-6 py-8">
         {/* Breadcrumb Premium */}
         <nav className="flex items-center gap-2 text-sm mb-10">
-          <a href="/" className="text-gray-500 hover:text-gray-900 transition-colors">Home</a>
+          <Link href="/" className="text-gray-500 hover:text-gray-900 transition-colors">Home</Link>
           <ChevronRight className="w-4 h-4 text-gray-400" />
-          <a href="/product" className="text-gray-500 hover:text-gray-900 transition-colors">
+          <Link href="/product" className="text-gray-500 hover:text-gray-900 transition-colors">
             {producto.category || 'Categoría'}
-          </a>
+          </Link>
           <ChevronRight className="w-4 h-4 text-gray-400" />
           <span className="text-gray-900 font-medium">{producto.name}</span>
         </nav>
@@ -73,7 +75,7 @@ export default function ProductoDetalle() {
           <div className="lg:col-span-7 space-y-6">
             {/* Imagen Principal */}
             <div className="rounded-lg overflow-hidden aspect-[10/9] flex items-center justify-center shadow-sm border border-gray-200 bg-gray-50">
-              <img
+              <Image
                 src={imagenes[imagenSeleccionada].url}
                 alt={producto.name}
                 className="object-contain w-full h-full"
@@ -93,7 +95,7 @@ export default function ProductoDetalle() {
                       : 'border-gray-200 opacity-60 hover:opacity-100 hover:border-gray-400'
                   }`}
                 >
-                  <img
+                  <Image
                     src={img.url}
                     alt={`Imagen ${index + 1}`}
                     className="object-cover w-full h-full"

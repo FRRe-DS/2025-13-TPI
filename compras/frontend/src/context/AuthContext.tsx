@@ -28,14 +28,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   // Se ejecuta una sola vez al cargar la app
   useEffect(() => {
-    const savedToken = localStorage.getItem('token');
-    if (savedToken) {
-      setToken(savedToken);
-      fetchUser(savedToken);
-    } else {
-      setIsLoading(false);
+  const fetchUser = async () => {
+    try {
+      const res = await fetch("/api/user");
+      const data = await res.json();
+      setUser(data);
+    } catch (error) {
+      console.error("Error al obtener usuario:", error);
     }
-  }, []);
+  };
+
+  fetchUser();
+}, []);
 
   const fetchUser = async (token: string) => {
     setIsLoading(true);

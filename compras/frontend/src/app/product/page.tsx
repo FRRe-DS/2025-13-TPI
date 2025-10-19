@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { ShoppingBag } from 'lucide-react';
+import Image from "next/image";
 
 interface Product {
   id: number;
@@ -37,7 +38,7 @@ export default function ProductListPage() {
             <div className="border rounded-lg p-4 shadow-sm hover:shadow-md transition-all cursor-pointer">
               <div className="aspect-square bg-gray-50 rounded-lg overflow-hidden mb-4 flex items-center justify-center">
                 {product.main_image_url ? (
-                  <img
+                  <Image
                     src={product.main_image_url}
                     alt={product.name}
                     className="object-contain w-full h-full"

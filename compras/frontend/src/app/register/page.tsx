@@ -54,11 +54,14 @@ export default function Signup() {
       setSuccess('Cuenta creada exitosamente! Redirigiendo...');
       localStorage.setItem('token', data.access_token);
       setTimeout(() => router.push('/dashboard'), 1500);
-    } catch (err: any) {
-      setError(err.message || 'Error al registrarse');
-    } finally {
-      setIsLoading(false);
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError('Error al registrarse');
+      }
     }
+
   };
 
   return (
