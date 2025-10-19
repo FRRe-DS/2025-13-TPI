@@ -45,10 +45,13 @@ def health():
 def root():
     return {"message": "Backend Compras funcionando 🚀"}
 
+origins = [
+    "http://localhost:3000",  # tu frontend
+]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=origins,      # o ["*"] para probar libremente
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
