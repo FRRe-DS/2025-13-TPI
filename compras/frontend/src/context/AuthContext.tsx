@@ -51,8 +51,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       const data = await res.json();
       setUser(data);
-      console.log('Consultando /auth/me con token:', token);
-      console.log('Respuesta status:', res.status);
     } catch (error) {
       console.error('Error al obtener usuario:', error);
       logout();

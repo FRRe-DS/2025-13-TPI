@@ -17,6 +17,12 @@ interface Product {
   images?: string[];
 }
 
+interface ProductImage {
+  url?: string;
+  is_primary?: boolean;
+}
+
+
 export default function ProductoDetalle() {
   const { id } = useParams();
   const [producto, setProducto] = useState<Product | null>(null);
@@ -24,7 +30,6 @@ export default function ProductoDetalle() {
   const [cantidad, setCantidad] = useState(1);
   const [loading, setLoading] = useState(true);
 
-  
   useEffect(() => {
     if (!id) return;
     fetch(`http://localhost:8000/api/product/${id}`)
@@ -44,22 +49,28 @@ export default function ProductoDetalle() {
     return <div className="p-10 text-gray-500">Producto no encontrado.</div>;
   }
 
-  
-  const imagenes =
-    producto.images && producto.images.length > 0
-      ? producto.images.map((img) => ({ url: img }))
-      : producto.main_image_url
-      ? [{ url: producto.main_image_url }]
-      : [
-          { url: '/placeholder.png' },
-          { url: '/placeholder.png' },
-          { url: '/placeholder.png' },
-        ];
+const BASE_URL = "http://127.0.0.1:8000";
+
+const imagenes: ProductImage[] =
+  producto.images && producto.images.length > 0
+    ? producto.images.map((img) => ({
+        ...img,
+        url: img.url
+          ? img.url.startsWith("http")
+            ? img.url
+            : `${BASE_URL}${img.url}`
+          : "/placeholder.png",
+      }))
+    : [{ url: "/placeholder.png", is_primary: true }];
+
+const imagenPrincipal =
+  imagenes.find((img) => img.is_primary)?.url ||
+  imagenes[0]?.url ||
+  "/placeholder.png";
 
   return (
     <div className="min-h-screen bg-white">
       <div className="max-w-7xl mx-auto px-6 py-8">
-        {/* Breadcrumb Premium */}
         <nav className="flex items-center gap-2 text-sm mb-10">
           <Link href="/" className="text-gray-500 hover:text-gray-900 transition-colors">Home</Link>
           <ChevronRight className="w-4 h-4 text-gray-400" />
@@ -71,38 +82,57 @@ export default function ProductoDetalle() {
         </nav>
 
         <div className="grid lg:grid-cols-12 gap-16">
-          {/* Galería de Imágenes - 7 columnas */}
           <div className="lg:col-span-7 space-y-6">
-            {/* Imagen Principal */}
             <div className="rounded-lg overflow-hidden aspect-[10/9] flex items-center justify-center shadow-sm border border-gray-200 bg-gray-50">
               <Image
-                src={imagenes[imagenSeleccionada].url}
-                alt={producto.name}
+                src={imagenPrincipal}
+                alt={producto.name || 'Imagen del producto'}
+                width={800}
+                height={600}
                 className="object-contain w-full h-full"
-                onError={(e) => (e.currentTarget.src = '/placeholder.png')}
+                unoptimized
               />
             </div>
 
-            {/* Miniaturas Premium */}
+
             <div className="grid grid-cols-5 gap-4">
-              {imagenes.map((img, index) => (
-                <button
-                  key={index}
-                  onClick={() => setImagenSeleccionada(index)}
-                  className={`aspect-square w-20 h-20 rounded-lg flex items-center justify-center text-5xl transition-all border-2 overflow-hidden ${
-                    imagenSeleccionada === index
-                      ? 'border-gray-900 shadow-md'
-                      : 'border-gray-200 opacity-60 hover:opacity-100 hover:border-gray-400'
-                  }`}
-                >
-                  <Image
-                    src={img.url}
-                    alt={`Imagen ${index + 1}`}
-                    className="object-cover w-full h-full"
-                    onError={(e) => (e.currentTarget.src = '/placeholder.png')}
-                  />
-                </button>
-              ))}
+              {imagenes.map((img, index) => {
+                // Detecta si 'img' es un string o un objeto { url: string }
+                const rawUrl =
+                  typeof img === 'string'
+                    ? img
+                    : typeof img?.url === 'string'
+                    ? img.url
+                    : '';
+
+                // Si no hay URL válida, usa el placeholder
+                const imageUrl =
+                  rawUrl && rawUrl.trim() !== '' && rawUrl.toLowerCase() !== 'string'
+                    ? rawUrl
+                    : '/placeholder.png';
+
+                return (
+                  <button
+                    key={index}
+                    onClick={() => setImagenSeleccionada(index)}
+                    className={`aspect-square w-20 h-20 rounded-lg flex items-center justify-center transition-all border-2 overflow-hidden ${
+                      imagenSeleccionada === index
+                        ? 'border-gray-900 shadow-md'
+                        : 'border-gray-200 opacity-60 hover:opacity-100 hover:border-gray-400'
+                    }`}
+                  >
+                    <Image
+                      src={imageUrl}
+                      alt={`Imagen ${index + 1}`}
+                      width={200}
+                      height={200}
+                      className="object-cover w-full h-full"
+                      unoptimized
+                      priority
+                    />
+                  </button>
+                );
+              })}
             </div>
           </div>
 
@@ -119,7 +149,6 @@ export default function ProductoDetalle() {
               <h1 className="text-lg font-medium text-gray-500 mb-2">Descripción</h1>
               <p className="text-black leading-relaxed">{producto.description}</p>
             </div>
-            {/* Product Information Grid */}
             <div className="grid grid-cols-2 gap-4 py-6 border-b border-gray-200">
               <div>
                 <div className="text-xs text-gray-500 uppercase tracking-wider mb-1">
@@ -156,7 +185,6 @@ export default function ProductoDetalle() {
               </div>
             </div>
 
-            {/* Selector de cantidad */}
             <div className="space-y-4">
               <div>
                 <label className="text-sm font-medium text-gray-900 mb-2 block">
@@ -174,7 +202,6 @@ export default function ProductoDetalle() {
                 </div>
               </div>
 
-              {/* Botones de Acción */}
               <div className="flex gap-3">
                 <button className="flex-1 bg-gray-900 text-white py-4 px-8 rounded hover:bg-gray-800 transition-all font-medium tracking-wide">
                   Añadir al Carrito
