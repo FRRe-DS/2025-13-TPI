@@ -11,7 +11,7 @@ class Product(Base):
     sku = Column(String, unique=True, nullable=False, index=True)
     stock = Column(Integer, nullable=True, default=0)
     category = Column(String, nullable=True)
-    main_image_url = Column(String, nullable=True)  # URL de la imagen principal del producto
+    #main_image_url = Column(String, nullable=True)  # URL de la imagen principal del producto
 
 
     cart_items = relationship("CartItem", back_populates="product", cascade="all, delete-orphan")
