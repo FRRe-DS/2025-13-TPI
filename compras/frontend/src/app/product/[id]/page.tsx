@@ -74,7 +74,7 @@ const imagenPrincipal =
         <nav className="flex items-center gap-2 text-sm mb-10">
           <Link href="/" className="text-gray-500 hover:text-gray-900 transition-colors">Home</Link>
           <ChevronRight className="w-4 h-4 text-gray-400" />
-          <Link href="/product" className="text-gray-500 hover:text-gray-900 transition-colors">
+          <Link href="/category" className="text-gray-500 hover:text-gray-900 transition-colors">
             {producto.category || 'Categoría'}
           </Link>
           <ChevronRight className="w-4 h-4 text-gray-400" />
