@@ -218,7 +218,7 @@ if (loading || error) {
                       className="flex-none w-64 bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all cursor-pointer hover:scale-105"
                     >
                       <div className="aspect-square relative bg-gradient-to-br from-blue-50 to-blue-100 overflow-hidden rounded-t-xl">
-                        <Link href={`/product/${producto.id}`}>
+                       
                         <Image
                           src={src}
                           alt={p.name}
@@ -231,7 +231,7 @@ if (loading || error) {
                         <h3 className="font-medium text-gray-700 mb-1 truncate">{p.name}</h3>
                         <p className="text-xl text-gray-900">$ {p.price}</p>
                       </div>
-                    </Link>
+                    
                     </div>
                   );
                 })}
