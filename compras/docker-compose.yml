@@ -1,0 +1,51 @@
+version: "3.9"
+
+networks:
+  tpi-network:
+    name: tpi-network   # nombre explícito para compartir con Stock y Logística
+    driver: bridge
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: backend-compras
+    networks:
+      - tpi-network
+    ports:
+      - "8000:8000"
+    environment:
+      - PYTHONUNBUFFERED=1
+      - SECRET_KEY=super-secret-en-prod
+      # Más adelante podrías agregar:
+      # - STOCK_API_URL=http://stock-service:8001
+      # - LOGISTICA_API_URL=http://logistica-service:8002
+    volumes:
+      # Persistir la base SQLite fuera del contenedor
+      - ./backend/app.db.sqlite:/app/app.db.sqlite
+      # Persistir las imágenes que subís
+      - ./backend/app/uploads:/app/app/uploads
+    # Para entorno productivo, dejá el comando por defecto del Dockerfile:
+    # CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+    # Para dev con autoreload, podés descomentar esto:
+    # command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        # Ojo: esto es lo que usa tu AuthContext: process.env.NEXT_PUBLIC_API_URL
+        NEXT_PUBLIC_API_URL: "http://backend-compras:8000"
+    container_name: frontend-compras
+    networks:
+      - tpi-network
+    depends_on:
+      - backend
+    ports:
+      - "3000:3000"
+    environment:
+      # En tiempo de ejecución, el navegador va a seguir pegándole a localhost:3000,
+      # pero el build de Next ya conoce el backend interno.
+      - NEXT_PUBLIC_API_URL=http://backend-compras:8000
