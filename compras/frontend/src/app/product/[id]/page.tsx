@@ -14,7 +14,7 @@ interface Product {
   category: string;
   stock: number;
   main_image_url?: string;
-  images?: string[];
+  images?: ProductImage[];
 }
 
 interface ProductImage {
@@ -53,7 +53,7 @@ const BASE_URL = "http://127.0.0.1:8000";
 
 const imagenes: ProductImage[] =
   producto.images && producto.images.length > 0
-    ? producto.images.map((img) => ({
+    ? (producto.images as ProductImage[]).map((img) => ({
         ...img,
         url: img.url
           ? img.url.startsWith("http")
@@ -67,6 +67,8 @@ const imagenPrincipal =
   imagenes.find((img) => img.is_primary)?.url ||
   imagenes[0]?.url ||
   "/placeholder.png";
+
+
 
   return (
     <div className="min-h-screen bg-white">

@@ -2,8 +2,8 @@ version: "3.9"
 
 networks:
   tpi-network:
-    name: tpi-network   # nombre explícito para compartir con Stock y Logística
-    driver: bridge
+    external: true   # nombre explícito para compartir con Stock y Logística
+    #driver: bridge
 
 services:
   backend:
@@ -34,7 +34,7 @@ services:
   frontend:
     build:
       context: ./frontend
-      dockerfile: Dockerfile
+      dockerfile: DockerFile
       args:
         # Ojo: esto es lo que usa tu AuthContext: process.env.NEXT_PUBLIC_API_URL
         NEXT_PUBLIC_API_URL: "http://backend-compras:8000"

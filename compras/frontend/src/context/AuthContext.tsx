@@ -77,12 +77,13 @@ const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/login`, {
   const errorData = await res.json().catch(() => ({}));
   console.error('Error en respuesta de login:', errorData);
 
-  const message =
-    typeof errorData.detail === 'string'
-      ? errorData.detail
-      : Array.isArray(errorData.detail)
-      ? errorData.detail.map((d) => d.msg).join(', ')
-      : 'Error al iniciar sesión';
+  const message = errorData?.detail
+  ? Array.isArray(errorData.detail)
+    ? (errorData.detail as { msg: string }[])
+        .map((d) => d.msg)
+        .join(', ')
+    : String(errorData.detail)
+  : 'Error al iniciar sesión';
 
   throw new Error(message);
 }
