@@ -3,33 +3,78 @@ from sqlalchemy.orm import Session
 from typing import List
 
 from app.db import get_db
-from app.routers.auth import get_current_user
-from app.crud.order import checkout_from_cart, list_user_orders, get_user_order, cancel_user_order
+from app.crud.order import (
+    checkout_from_cart,
+    list_user_orders,
+    get_user_order,
+    cancel_user_order,
+)
 from app.schemas.orders import OrderOut, OrderListItem
+from app.core.keycloak_security import require_auth, require_scope
 
-router = APIRouter(prefix="/api/cart", tags=["Frontend - Pedidos"], dependencies=[Depends(get_current_user)])
+router = APIRouter(
+    prefix="/api/cart",
+    tags=["Frontend - Pedidos"],
+)
 
-@router.post("/checkout", response_model=OrderOut, status_code=status.HTTP_201_CREATED)
-def checkout(db: Session = Depends(get_db), current_user=Depends(get_current_user)):
-    order = checkout_from_cart(db, user_id=current_user.id)
+
+@router.post(
+    "/checkout",
+    response_model=OrderOut,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(require_scope("compras:write"))],
+)
+def checkout(
+    db: Session = Depends(get_db),
+    token_data: dict = Depends(require_auth),
+):
+    # ID del usuario autenticado en Keycloak (claim 'sub')
+    user_id = token_data["sub"]
+    order = checkout_from_cart(db, user_id=user_id)
     return order
 
 
-@router.get("/history", response_model=List[OrderListItem])
-def history(db: Session = Depends(get_db), current_user=Depends(get_current_user)):
-    orders = list_user_orders(db, user_id=current_user.id)
+@router.get(
+    "/history",
+    response_model=List[OrderListItem],
+    dependencies=[Depends(require_scope("compras:read"))],
+)
+def history(
+    db: Session = Depends(get_db),
+    token_data: dict = Depends(require_auth),
+):
+    user_id = token_data["sub"]
+    orders = list_user_orders(db, user_id=user_id)
     return orders
 
 
-@router.get("/history/{id}", response_model=OrderOut)
-def get_order(id: int, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
-    return get_user_order(db, uder_id=current_user.id, order_id=id)
+@router.get(
+    "/history/{id}",
+    response_model=OrderOut,
+    dependencies=[Depends(require_scope("compras:read"))],
+)
+def get_order(
+    id: int,
+    db: Session = Depends(get_db),
+    token_data: dict = Depends(require_auth),
+):
+    user_id = token_data["sub"]
+    return get_user_order(db, user_id=user_id, order_id=id)
 
 
-@router.delete("/history/{id}", status_code=status.HTTP_204_NO_CONTENT)
-def cancel_order(id: int, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
-    cancel_user_order(db, user_id=current_user.id, order_id=id)
-    return 
+@router.delete(
+    "/history/{id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(require_scope("compras:write"))],
+)
+def cancel_order(
+    id: int,
+    db: Session = Depends(get_db),
+    token_data: dict = Depends(require_auth),
+):
+    user_id = token_data["sub"]
+    cancel_user_order(db, user_id=user_id, order_id=id)
+    return
 
 
     

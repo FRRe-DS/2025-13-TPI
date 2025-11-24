@@ -13,7 +13,7 @@ class Order(Base):
     __tablename__ = "orders"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), index=True, nullable=False)
+    user_id = Column(String, index=True, nullable=False)
     status = Column(Enum(OrderStatus), default=OrderStatus.PENDING, nullable=False)
     total_amount = Column(Numeric(10, 2), nullable=False, default=0.00)
     created_at = Column(DateTime(timezone=True), server_default=text("CURRENT_TIMESTAMP"))
