@@ -17,7 +17,12 @@ class CartItem(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     cart_id = Column(Integer, ForeignKey("carts.id"), nullable=False)
-    product_id = Column(Integer, ForeignKey("products.id"), nullable=False)
+
+    #lo que debería ir en product_id lo dejo comentado para evitar conflictos con migraciones, con los datos de stock
+    #product_id = Column(Integer, nullable=False)
+    #product_name = Column(String(255), nullable=True)
+    #unit_price = Column(Float, nullable=True)
+
     quantity = Column(Integer, nullable=False)
 
     cart = relationship("Cart", back_populates="items")

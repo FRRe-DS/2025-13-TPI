@@ -29,7 +29,11 @@ class OrderItem(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     order_id = Column(Integer, ForeignKey("orders.id", ondelete="CASCADE"), index=True, nullable=False)
-    product_id = Column(Integer, ForeignKey("products.id"), index=True, nullable=False)
+    
+    #product_id = Column(Integer, nullable=False)
+    #product_name = Column(String(255), nullable=True)
+    #unit_price = Column(Float, nullable=True)
+
     product_name = Column(String, nullable=False)
     quantity = Column(Integer, nullable=False, default=1)
     unit_price = Column(Numeric(10, 2), nullable=False)

@@ -4,7 +4,8 @@ import os
 
 from app.db import engine, Base
 from app.models import carts as cart_item_model
-from app.routers import cart, orders, users
+from app.routers import cart, orders
+from app.routers.users import router as users_router
 from starlette.middleware.cors import CORSMiddleware
 from app.core.config import settings
 
@@ -23,7 +24,7 @@ app.mount("/static", StaticFiles(directory=Upload_DIR), name="static")
 #app.include_router(auth.router, prefix="/api/auth", tags=["Auth"])
 #app.include_router(product_router.router)
 #app.include_router(product_image_router.router)
-app.include_router(users.router)
+app.include_router(users_router)
 app.include_router(cart.router)
 app.include_router(orders.router)
 #app.include_router(category_router.router)

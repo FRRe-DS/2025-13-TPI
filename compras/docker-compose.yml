@@ -11,6 +11,8 @@ services:
     environment:
       - STOCK_API_URL=http://stock-service:8000/v1
       - LOGISTICS_API_URL=http://shipping_back:3000   # 👈 nombre del contenedor logística
+    volumes:
+      - ./backend:/app
     networks:
       - tpi-network
 
