@@ -3,7 +3,20 @@ from sqlalchemy.orm import Session, joinedload
 from fastapi import HTTPException, status
 
 from app.models.carts import Cart, CartItem
-from app.models.products import Product  # más adelante esto hablará con STOCK
+from app.models.products import Product
+import os
+import httpx
+
+STOCK_API_URL = os.getenv("STOCK_API_URL", "http://stock:8000/v1")
+
+
+async def get_product_from_stock(product_id: int) -> Product:
+    async with httpx.AsyncClient() as client:
+        # 👇 ajustá la ruta según el micro de stock
+        resp = await client.get(f"{STOCK_API_URL}/products/{product_id}")
+        resp.raise_for_status()
+        data = resp.json()
+        return Product(**data)
 
 def get_or_create_cart(db: Session, user_id: str) -> Cart:
     cart = (
