@@ -1,51 +1,100 @@
-version: "3.9"
-
-networks:
-  tpi-network:
-    external: true   # nombre explícito para compartir con Stock y Logística
-    #driver: bridge
-
 services:
-  backend:
+  backend-compras:
+    container_name: backend-compras
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: backend-compras
-    networks:
-      - tpi-network
     ports:
       - "8000:8000"
+    env_file:
+      - ./.env
     environment:
-      - PYTHONUNBUFFERED=1
-      - SECRET_KEY=super-secret-en-prod
-      # Más adelante podrías agregar:
-      # - STOCK_API_URL=http://stock-service:8001
-      # - LOGISTICA_API_URL=http://logistica-service:8002
-    volumes:
-      # Persistir la base SQLite fuera del contenedor
-      - ./backend/app.db.sqlite:/app/app.db.sqlite
-      # Persistir las imágenes que subís
-      - ./backend/app/uploads:/app/app/uploads
-    # Para entorno productivo, dejá el comando por defecto del Dockerfile:
-    # CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
-    # Para dev con autoreload, podés descomentar esto:
-    # command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+      - STOCK_API_URL=http://stock-service:8000/v1
+      - LOGISTICS_API_URL=http://shipping_back:3000   # 👈 nombre del contenedor logística
+    networks:
+      - tpi-network
 
-  frontend:
+  frontend-compras:
+    container_name: frontend-compras
     build:
       context: ./frontend
       dockerfile: DockerFile
-      args:
-        # Ojo: esto es lo que usa tu AuthContext: process.env.NEXT_PUBLIC_API_URL
-        NEXT_PUBLIC_API_URL: "http://backend-compras:8000"
-    container_name: frontend-compras
+    ports:
+      - "3000:3000"
     networks:
       - tpi-network
     depends_on:
-      - backend
+      - backend-compras
+
+  # ===================== STOCK =====================
+  stock:
+    container_name: stock-service
+    image: fariasvalentino25/docker-stock_backend_api:latest
     ports:
-      - "3000:3000"
+      - "8001:8000"
     environment:
-      # En tiempo de ejecución, el navegador va a seguir pegándole a localhost:3000,
-      # pero el build de Next ya conoce el backend interno.
-      - NEXT_PUBLIC_API_URL=http://backend-compras:8000
+      NODE_ENV: production
+      PORT: 8000
+      DB_HOST: aws-1-us-east-2.pooler.supabase.com
+      DB_PORT: 5432
+      DB_NAME: postgres
+      DB_USER: postgres.vzabfnzrcynffhdjdddv
+      DB_PASSWORD: TNNczJndvipl7Kgk
+      KEYCLOAK_TOKEN_URL: ${KEYCLOAK_TOKEN_URL}
+      KEYCLOAK_CLIENT_ID: ${KEYCLOAK_CLIENT_ID}
+      KEYCLOAK_CLIENT_SECRET: ${KEYCLOAK_CLIENT_SECRET}
+      KEYCLOAK_ISSUER_URL: http://keycloak:8080/realms/ds-2025-realm
+      KEYCLOAK_AUDIENCE: grupo-13
+    networks:
+      - tpi-network
+
+  # ===================== LOGISTICA =====================
+  shipping_mysql:
+    image: mysql:8.0
+    container_name: shipping_mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root123
+      MYSQL_DATABASE: shipping_db
+      MYSQL_USER: shipping_user
+      MYSQL_PASSWORD: shipping_pass
+    ports:
+      - "3306:3306"  
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "shipping_user", "-pshipping_pass"]
+      interval: 3s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+    networks:
+      - tpi-network
+
+  shipping_back:
+    image: ghcr.io/frre-ds/2025-grupo-03-backend-logistica:e1b3782ab13f10c29c20e94eccfa8f1441f9fed7
+    container_name: shipping_back
+    restart: always
+    environment:
+      DB_HOST: shipping_mysql
+      DB_PORT: 3306
+      DB_USERNAME: shipping_user
+      DB_PASSWORD: shipping_pass
+      DB_DATABASE: shipping_db
+    depends_on:
+      shipping_mysql:
+        condition: service_healthy
+    ports:
+      - "3010:3010"   
+    networks:
+      - tpi-network
+
+volumes:
+  mysql_data:
+
+networks:
+  tpi-network:
+    external: true
+
+
+
