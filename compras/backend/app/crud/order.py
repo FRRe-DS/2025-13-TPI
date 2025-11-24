@@ -4,7 +4,8 @@ from decimal import Decimal
 
 from app.models.orders import Order, OrderItem, OrderStatus
 from app.models.carts import Cart, CartItem
-from app.models.products import Product
+from app.models.products import Producto as Product
+
 
 
 def checkout_from_cart(db: Session, user_id: str) -> Order:

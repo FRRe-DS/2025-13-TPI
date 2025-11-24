@@ -1,4 +1,48 @@
 services:
+  # ===================== KEYCLOAK DB (POSTGRES) =====================
+  postgres-keycloak:
+    image: postgres:16.2
+    container_name: postgres-keycloak
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    networks:
+      - tpi-network
+
+  # ===================== KEYCLOAK =====================
+  keycloak:
+    image: quay.io/keycloak/keycloak:23.0.6
+    container_name: keycloak
+    command: start --import-realm
+    environment:
+      KC_HOSTNAME: localhost
+      KC_HOSTNAME_PORT: 8080
+      KC_HOSTNAME_STRICT_BACKCHANNEL: false
+      KC_HTTP_ENABLED: true
+      KC_HOSTNAME_STRICT_HTTPS: false
+      KC_HEALTH_ENABLED: true
+
+      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
+
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres-keycloak/${POSTGRES_DB}
+      KC_DB_USERNAME: ${POSTGRES_USER}
+      KC_DB_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./realm-config:/opt/keycloak/data/import
+    restart: always
+    depends_on:
+      - postgres-keycloak
+    networks:
+      - tpi-network
+
+  # ===================== COMPRAS BACKEND =====================
   backend-compras:
     container_name: backend-compras
     build:
@@ -9,13 +53,22 @@ services:
     env_file:
       - ./.env
     environment:
-      - STOCK_API_URL=http://stock-service:8000/v1
-      - LOGISTICS_API_URL=http://shipping_back:3000   # 👈 nombre del contenedor logística
+      - STOCK_API_URL=http://stock:8000/v1
+      - LOGISTICS_API_URL=http://shipping_back:3010
+      - KEYCLOAK_ISSUER_URL=http://keycloak:8080/realms/ds-2025-realm
+      - KEYCLOAK_TOKEN_URL=http://keycloak:8080/realms/ds-2025-realm/protocol/openid-connect/token
+      - KEYCLOAK_CLIENT_ID=grupo-13
+      - KEYCLOAK_CLIENT_SECRET=CAMBIA_ESTE_SECRET
     volumes:
       - ./backend:/app
     networks:
       - tpi-network
+    depends_on:
+      - keycloak
+      - stock
+      - shipping_back
 
+  # ===================== COMPRAS FRONTEND =====================
   frontend-compras:
     container_name: frontend-compras
     build:
@@ -49,6 +102,8 @@ services:
       KEYCLOAK_AUDIENCE: grupo-13
     networks:
       - tpi-network
+    depends_on:
+      - keycloak
 
   # ===================== LOGISTICA =====================
   shipping_mysql:
@@ -61,7 +116,7 @@ services:
       MYSQL_USER: shipping_user
       MYSQL_PASSWORD: shipping_pass
     ports:
-      - "3306:3306"  
+      - "3306:3306"
     volumes:
       - mysql_data:/var/lib/mysql
     healthcheck:
@@ -87,16 +142,14 @@ services:
       shipping_mysql:
         condition: service_healthy
     ports:
-      - "3010:3010"   
+      - "3010:3010"
     networks:
       - tpi-network
 
 volumes:
   mysql_data:
+  postgres_data:
 
 networks:
   tpi-network:
     external: true
-
-
-

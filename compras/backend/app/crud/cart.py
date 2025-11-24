@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session, joinedload
 from fastapi import HTTPException, status
 
 from app.models.carts import Cart, CartItem
-from app.models.products import Product
+from app.models.products import Producto as Product
 import os
 import httpx
 
