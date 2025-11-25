@@ -32,7 +32,7 @@ export default function ProductoDetalle() {
 
   useEffect(() => {
     if (!id) return;
-    fetch(`http://localhost:8000/api/product/${id}`)
+    fetch(`http://localhost:8000/api/productos/${id}`)
       .then((res) => res.json())
       .then((data) => {
         setProducto(data);
