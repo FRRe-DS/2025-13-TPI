@@ -55,7 +55,7 @@ services:
     environment:
       - STOCK_API_URL=http://stock:8000/v1
       - LOGISTICS_API_URL=http://shipping_back:3010
-      - KEYCLOAK_ISSUER_URL=http://keycloak:8080/realms/ds-2025-realm
+      - KEYCLOAK_ISSUER=http://keycloak:8080/realms/ds-2025-realm
       - KEYCLOAK_TOKEN_URL=http://keycloak:8080/realms/ds-2025-realm/protocol/openid-connect/token
       - KEYCLOAK_CLIENT_ID=grupo-13
       - KEYCLOAK_CLIENT_SECRET=CAMBIA_ESTE_SECRET

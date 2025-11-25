@@ -26,4 +26,4 @@ class CartItem(Base):
     quantity = Column(Integer, nullable=False)
 
     cart = relationship("Cart", back_populates="items")
-    product = relationship("Product")
+    #product = relationship("Product")

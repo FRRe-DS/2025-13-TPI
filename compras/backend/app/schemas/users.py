@@ -9,6 +9,7 @@ class UserOut(BaseModel):
     nombre: str
     email: Optional[EmailStr] = None
     created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True
