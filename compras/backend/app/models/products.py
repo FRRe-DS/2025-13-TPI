@@ -1,24 +1,19 @@
-from pydantic import BaseModel, HttpUrl
+from pydantic import BaseModel
 from typing import List, Optional
 
 
-class Categoria(BaseModel):
-  id: int
-  nombre: str
-  descripcion: Optional[str] = None
-
-
-class ImagenProducto(BaseModel):
-  url: HttpUrl
-  esPrincipal: bool
+class ProductImage(BaseModel):
+    url: str
+    is_primary: bool = False
 
 
 class Producto(BaseModel):
-  id: int
-  nombre: str
-  descripcion: Optional[str] = None
-  precio: float
-  stockDisponible: int
-  pesoKg: Optional[float] = None
-  categorias: Optional[List[Categoria]] = None
-  imagenes: Optional[List[ImagenProducto]] = None
+    id: int
+    name: str                    # viene de "nombre"
+    description: str             # viene de "descripcion"
+    price: float                 # viene de "precio" (string en stock)
+    sku: Optional[str] = None
+    category: Optional[str] = None
+    stock: int                   # viene de "stockDisponible"
+    main_image_url: Optional[str] = None
+    images: List[ProductImage] = []
