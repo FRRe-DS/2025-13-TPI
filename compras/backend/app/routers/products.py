@@ -2,8 +2,9 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, Query
 
 from app.schemas.frontend_products import FrontendProduct, FrontendProductImage
+from app.models.products import Producto
 from app.clients.stock_client import listar_productos, obtener_producto
-from app.core.keycloak_security import require_auth, require_scope
+#from app.core.keycloak_security import require_auth, require_scope
 
 router = APIRouter(
     prefix="/api/productos",
@@ -61,30 +62,16 @@ def map_stock_product_to_frontend(stock_p: dict) -> FrontendProduct:
     )
 
 
-@router.get(
-    "",
-    response_model=List[FrontendProduct],
-    dependencies=[Depends(require_scope("compras:read"))],
-)
-async def list_products(
+@router.get("", response_model=List[Producto])
+def list_products(
     page: int = Query(1, ge=1),
     limit: int = Query(20, ge=1, le=100),
     q: Optional[str] = None,
     categoriaId: Optional[int] = None,
-    token_data: dict = Depends(require_auth),
 ):
-    stock_products = await listar_productos(page=page, limit=limit, q=q, categoria_id=categoriaId)
-    return [map_stock_product_to_frontend(p) for p in stock_products]
+    return listar_productos(page=page, limit=limit, q=q, categoria_id=categoriaId)
 
 
-@router.get(
-    "/{producto_id}",
-    response_model=FrontendProduct,
-    dependencies=[Depends(require_scope("compras:read"))],
-)
-async def get_product(
-    producto_id: int,
-    token_data: dict = Depends(require_auth),
-):
-    stock_p = await obtener_producto(producto_id)
-    return map_stock_product_to_frontend(stock_p)
+@router.get("/{producto_id}", response_model=Producto)
+def get_product(producto_id: int):
+    return obtener_producto(producto_id)

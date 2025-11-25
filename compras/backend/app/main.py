@@ -11,6 +11,12 @@ from app.core.config import settings
 
 app = FastAPI(title="Backend Compras", version="1.0")
 
+origins = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+]
+
+
 # (dev) crear tablas si aún no usás Alembic
 Base.metadata.create_all(bind=engine)
 
@@ -48,8 +54,10 @@ origins = [
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,      # o ["*"] para probar libremente
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.include_router(products.router)
