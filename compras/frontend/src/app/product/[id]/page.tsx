@@ -5,6 +5,8 @@ import { useParams } from 'next/navigation';
 import { ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
+import LoadingScreen from '@/components/LoadingScreen';
+import ProductNotFound from '@/components/ProductNotFound';
 
 // ====== Tipos normalizados para el FRONT ======
 
@@ -135,11 +137,11 @@ export default function ProductoDetalle() {
   }, [id, API_URL]);
 
   if (loading) {
-    return <div className="p-10 text-gray-500">Cargando producto...</div>;
-  }
+      return <LoadingScreen />;
+    }
 
   if (!producto) {
-    return <div className="p-10 text-gray-500">Producto no encontrado.</div>;
+    return <ProductNotFound />;
   }
 
   // Para armar URLs de imágenes solo usamos BASE_URL

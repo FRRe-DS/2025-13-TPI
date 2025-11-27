@@ -82,7 +82,7 @@ services:
       - tpi-network
     depends_on:
       - backend-compras
-
+      
   # ===================== STOCK =====================
   stock:
     container_name: stock-service
