@@ -72,7 +72,7 @@ export default function Signup() {
             <h2 className="text-3xl font-bold text-gray-900 mb-2 py-2">Crear una cuenta nueva</h2>
             <p className="text-gray-500">
               ¿Ya tienes una cuenta?
-              <a href="/login" className="text-blue-500 hover:underline font-medium">
+              <a href="/login" className="text-blue-900 hover:underline font-medium">
                 {' '}
                 Inicia sesión
               </a>
@@ -146,7 +146,7 @@ export default function Signup() {
 
               <button
                 onClick={handleSubmit}
-                className="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 rounded-md transition duration-200"
+                className="w-full bg-gray-800 hover:bg-gray-600 text-white font-semibold py-3 rounded-md transition duration-200"
               >
                 Crear cuenta
               </button>

@@ -33,8 +33,8 @@ export default function LoginPage() {
     <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
       <div className="bg-white rounded-lg shadow-lg p-8 w-full max-w-md">
         <div className="flex justify-center mb-6">
-          <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
-            <User className="text-blue-500 w-8 h-8" />
+          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
+            <User className="text-gray-500 w-8 h-8" />
           </div>
         </div>
 
@@ -44,7 +44,7 @@ export default function LoginPage() {
 
         <p className="text-center text-gray-600 text-sm mb-6">
           ¿No tienes una cuenta?{' '}
-          <a href="/register" className="text-blue-500 hover:text-blue-600 font-medium">
+          <a href="/register" className="text-blue-800 hover:text-blue-600 font-medium">
             Regístrate
           </a>
         </p>
@@ -75,7 +75,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full bg-blue-500 hover:bg-blue-600 text-white font-medium py-3 rounded-md transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full bg-gray-800 hover:bg-gray-600 text-white font-medium py-3 rounded-md transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isLoading ? 'Iniciando sesión...' : 'Iniciar sesión'}
           </button>

@@ -7,6 +7,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import LoadingScreen from '@/components/LoadingScreen';
 import ProductNotFound from '@/components/ProductNotFound';
+import { buildImageUrl } from '@/utils/imageUrl';
 
 // ====== Tipos normalizados para el FRONT ======
 
@@ -59,7 +60,7 @@ interface BackendProducto {
   id: number;
   nombre: string;
   descripcion: string;
-  precio: string;           // viene como string: "1499.99"
+  precio: string; // viene como string: "1499.99"
   stockDisponible: number;
   pesoKg?: string;
   dimensiones?: BackendDimensiones;
@@ -80,8 +81,8 @@ export default function ProductoDetalle() {
   const [cantidad, setCantidad] = useState(1);
   const [loading, setLoading] = useState(true);
 
-  // Esta URL apunta AL STOCK (8001/v1)
-  const rawApiUrl = process.env.NEXT_PUBLIC_API_URL;
+  // URL base de la API de STOCK
+  const rawApiUrl = process.env.NEXT_PUBLIC_API_URL ?? '';
   const API_URL =
     rawApiUrl && rawApiUrl.trim() !== ''
       ? rawApiUrl
@@ -137,32 +138,22 @@ export default function ProductoDetalle() {
   }, [id, API_URL]);
 
   if (loading) {
-      return <LoadingScreen />;
-    }
+    return <LoadingScreen />;
+  }
 
   if (!producto) {
     return <ProductNotFound />;
   }
 
-  // Para armar URLs de imágenes solo usamos BASE_URL
-  const BASE_URL = API_URL;
-
+  // Normalizamos TODAS las URLs de imagen usando el helper
   const imagenes: ProductImage[] =
     producto.images && producto.images.length > 0
-      ? producto.images.map((img) => {
-          const rawUrl = img.url;
-          const finalUrl =
-            rawUrl && rawUrl.startsWith('http')
-              ? rawUrl
-              : rawUrl
-              ? `${BASE_URL}${rawUrl}`
-              : '/placeholder.png';
-
-          return {
-            url: finalUrl,
+      ? producto.images
+          .filter((img) => !!img.url)
+          .map((img) => ({
+            url: buildImageUrl(img.url),
             is_primary: img.is_primary,
-          };
-        })
+          }))
       : [{ url: '/placeholder.png', is_primary: true }];
 
   const imagenPrincipal =
@@ -225,7 +216,7 @@ export default function ProductoDetalle() {
                       alt={`Imagen ${index + 1}`}
                       width={200}
                       height={200}
-                      className="object-cover w-full h-full"
+                      className="object-contain w-full h-full"
                       unoptimized
                       priority
                     />
