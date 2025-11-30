@@ -4,7 +4,7 @@ import os
 
 from app.db import engine, Base
 from app.models import carts as cart_item_model
-from app.routers import cart, orders, products, stock_bridge, users
+from app.routers import cart, orders, products, stock_bridge, users, auth
 from starlette.middleware.cors import CORSMiddleware
 from app.core.config import settings
 
@@ -34,6 +34,7 @@ app.include_router(cart.router)
 app.include_router(orders.router)
 app.include_router(stock_bridge.router)
 app.include_router(products.router)
+app.include_router(auth.router)
 #app.include_router(category_router.router)
 #app.include_router(booking.router, prefix="/api/booking", tags=["Booking"])
 #app.include_router(tracking.router, prefix="/api/tracking", tags=["Tracking"])

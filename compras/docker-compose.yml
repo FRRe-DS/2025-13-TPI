@@ -58,7 +58,7 @@ services:
       - KEYCLOAK_ISSUER=http://keycloak:8080/realms/ds-2025-realm
       - KEYCLOAK_TOKEN_URL=http://keycloak:8080/realms/ds-2025-realm/protocol/openid-connect/token
       - KEYCLOAK_CLIENT_ID=grupo-13
-      - KEYCLOAK_CLIENT_SECRET=CAMBIA_ESTE_SECRET
+      - KEYCLOAK_CLIENT_SECRET=${KEYCLOAK_CLIENT_SECRET}
     volumes:
       - ./backend:/app
     networks:

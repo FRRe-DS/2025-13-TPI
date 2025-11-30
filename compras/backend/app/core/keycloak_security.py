@@ -9,7 +9,7 @@ from jwt import PyJWKClient
 # Para DEV, desactivamos verify_iss y verify_aud.
 ISSUER_PUBLIC = os.getenv(
     "KEYCLOAK_ISSUER_PUBLIC",
-    "http://localhost:8080/realms/ds-2025-realm"   # issuer que trae el token
+    "http://keycloak:8080/realms/ds-2025-realm"   # issuer que trae el token
 )
 JWKS_URL = os.getenv(
     "KEYCLOAK_JWKS_URL",
