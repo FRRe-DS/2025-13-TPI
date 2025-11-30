@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { ChevronRight, ChevronDown } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -63,7 +63,9 @@ interface BackendProducto {
   imagenes?: BackendImage[];
 }
 
-export default function CatalogoAccesorios() {
+// =================== COMPONENTE INTERNO (usa useSearchParams) ===================
+
+function CategoryPageInner() {
   const [productos, setProductos] = useState<Product[]>([]);
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState<string | null>(null);
   const [ordenar, setOrdenar] = useState('destacado');
@@ -191,7 +193,8 @@ export default function CatalogoAccesorios() {
         {/* Si viene búsqueda, lo mostramos arriba como contexto */}
         {searchQuery && (
           <p className="text-sm text-gray-700 mb-4">
-            Resultados para: <span className="font-semibold">&quot;{searchQuery}&quot;</span>
+            Resultados para:{' '}
+            <span className="font-semibold">&quot;{searchQuery}&quot;</span>
           </p>
         )}
 
@@ -207,7 +210,6 @@ export default function CatalogoAccesorios() {
                   key={index}
                   onClick={() => {
                     setCategoriaSeleccionada(nombre);
-                    // si querés, podrías también actualizar la URL con ?category=...
                   }}
                   className={`block w-full text-left px-3 py-2 text-sm rounded transition-colors ${
                     categoriaSeleccionada === nombre
@@ -302,5 +304,15 @@ export default function CatalogoAccesorios() {
         </div>
       </div>
     </div>
+  );
+}
+
+// =================== EXPORT POR DEFECTO CON SUSPENSE ===================
+
+export default function CategoryPage() {
+  return (
+    <Suspense fallback={<div className="p-8">Cargando categorías...</div>}>
+      <CategoryPageInner />
+    </Suspense>
   );
 }

@@ -38,14 +38,16 @@ export default function OrdersView() {
     }
   ];
 
-  const getStatusLabel = (status) => {
-    const labels = {
-      'En Tránsito': { text: 'En camino', color: 'text-blue-600' },
-      'Entregado': { text: 'Completado', color: 'text-green-600' },
-      'Pendiente': { text: 'Preparando', color: 'text-yellow-600' }
-    };
-    return labels[status] || { text: status, color: 'text-gray-600' };
+  const getStatusLabel = (status: string) => {
+  const labels: Record<string, { text: string; color: string }> = {
+    'En Tránsito': { text: 'En camino', color: 'text-blue-600' },
+    'Entregado': { text: 'Completado', color: 'text-green-600' },
+    'Cancelado': { text: 'Cancelado', color: 'text-red-600' },
   };
+
+  return labels[status] || { text: status, color: 'text-gray-600' };
+  };
+
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
