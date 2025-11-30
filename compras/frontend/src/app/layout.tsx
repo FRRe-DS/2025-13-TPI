@@ -12,7 +12,6 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="es">
       <body className="bg-gray-50">
-        {/* Todo lo que usa hooks va adentro de AppShell */}
         <AppShell>{children}</AppShell>
       </body>
     </html>
