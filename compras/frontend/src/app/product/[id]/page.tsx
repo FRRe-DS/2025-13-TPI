@@ -8,6 +8,7 @@ import Image from 'next/image';
 import LoadingScreen from '@/components/LoadingScreen';
 import ProductNotFound from '@/components/ProductNotFound';
 import { buildImageUrl } from '@/utils/imageUrl';
+import { useCart } from '@/context/CartContext';
 
 // ====== Tipos normalizados para el FRONT ======
 
@@ -80,6 +81,7 @@ export default function ProductoDetalle() {
   const [imagenSeleccionada, setImagenSeleccionada] = useState(0);
   const [cantidad, setCantidad] = useState(1);
   const [loading, setLoading] = useState(true);
+  const { addToCart } = useCart();
 
   // URL base de la API de STOCK
   const rawApiUrl = process.env.NEXT_PUBLIC_API_URL ?? '';
@@ -145,6 +147,9 @@ export default function ProductoDetalle() {
     return <ProductNotFound />;
   }
 
+  if (loading) return <LoadingScreen />;
+  if (!producto) return <ProductNotFound />;
+
   // Normalizamos TODAS las URLs de imagen usando el helper
   const imagenes: ProductImage[] =
     producto.images && producto.images.length > 0
@@ -160,6 +165,19 @@ export default function ProductoDetalle() {
     imagenes[imagenSeleccionada]?.url ??
     imagenes.find((img) => img.is_primary)?.url ??
     '/placeholder.png';
+  
+  const handleAddToCart = () => {
+    if (!producto) return;
+
+    addToCart({
+      id: producto.id,
+      name: producto.name,
+      price: producto.price,
+      quantity: cantidad,
+      image: imagenPrincipal,
+      category: producto.category,
+    });
+  };
 
   return (
     <div className="min-h-screen bg-white">
@@ -309,8 +327,10 @@ export default function ProductoDetalle() {
               </div>
 
               <div className="flex gap-3">
-                <button className="flex-1 bg-gray-900 text-white py-4 px-8 rounded hover:bg-gray-800 transition-all font-medium tracking-wide">
-                  Añadir al Carrito
+                <button className="flex-1 bg-gray-900 text-white py-4 px-8 rounded hover:bg-gray-800 transition-all font-medium tracking-wide" 
+                onClick={handleAddToCart}
+                disabled={producto.stock === 0}>
+                   {producto.stock === 0 ? 'Agotado' : 'Añadir al Carrito'}
                 </button>
               </div>
             </div>
