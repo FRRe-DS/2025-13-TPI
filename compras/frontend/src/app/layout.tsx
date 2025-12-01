@@ -1,26 +1,18 @@
-"use client";
+import './globals.css';
+import type { ReactNode } from 'react';
+import type { Metadata } from 'next';
+import AppShell from './AppShell'; // 👈 nuevo componente cliente
 
-import "./globals.css";
-import { AuthProvider } from "@/context/AuthContext";
-import Navbar from "@/components/Navbar";
-import { usePathname } from "next/navigation";   
-import type { ReactNode } from "react";
+export const metadata: Metadata = {
+  title: 'Portal de Compras',
+  description: 'TPI Compras',
+};
 
 export default function RootLayout({ children }: { children: ReactNode }) {
-  const pathname = usePathname();
-
- 
-  const hideNavbar = pathname === "/login";      
-
   return (
     <html lang="es">
-      <body>
-        <AuthProvider>
-         
-          {!hideNavbar && <Navbar />}
-
-          <main>{children}</main>
-        </AuthProvider>
+      <body className="bg-gray-50">
+        <AppShell>{children}</AppShell>
       </body>
     </html>
   );
