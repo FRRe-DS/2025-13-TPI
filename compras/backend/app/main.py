@@ -14,6 +14,8 @@ app = FastAPI(title="Backend Compras", version="1.0")
 origins = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
+    "http://localhost:3001",
+    "http://127.0.0.1:3001",
 ]
 
 
@@ -48,10 +50,6 @@ def health():
 @app.get("/")
 def root():
     return {"message": "Backend Compras funcionando 🚀"}
-
-origins = [
-    "http://localhost:3000",  # tu frontend
-]
 
 app.add_middleware(
     CORSMiddleware,

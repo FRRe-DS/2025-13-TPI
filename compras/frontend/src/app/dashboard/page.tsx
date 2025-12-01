@@ -1,247 +1,358 @@
-"use client";
+'use client';
 
-import Image from "next/image";
-import { useState, useEffect, useRef } from "react";
-import Link from "next/link";
-import { Search, ShoppingCart, User } from "lucide-react";
+import { useState, useEffect } from 'react';
+import Image from 'next/image';
+import { useRouter } from 'next/navigation';
+import { buildImageUrl } from '@/utils/imageUrl';
 
+// ========= Tipos FRONT =========
 
 interface ProductImage {
-  url?: string;
-  is_primary?: boolean;
+  url: string;
+  is_primary: boolean;
 }
 
 interface Product {
-  id: number | string;
+  id: number;
   name: string;
-  price?: number;
-  stock?: number;
-  category?:string;
-  main_image_url?: string | null;
-  images?: ProductImage[];
+  price: number;
+  category: string;
+  images: ProductImage[];
 }
 
-interface Category {
-  id: number | string;
-  name: string;
-  description?: string;
-  image_url?: string;
+// ========= Tipos BACK STOCK (8001/v1) =========
+
+interface BackendImage {
+  id: number;
+  url: string;
+  esPrincipal: boolean;
+  productoId: number;
 }
 
-export default function Compras() {
+interface BackendCategoria {
+  id: number;
+  nombre: string;
+  descripcion: string;
+}
+
+interface BackendProducto {
+  id: number;
+  nombre: string;
+  descripcion: string;
+  precio: string; // "1499.99"
+  stockDisponible: number;
+  categorias?: BackendCategoria[];
+  imagenes?: BackendImage[];
+}
+
+export default function HomePage() {
+  const router = useRouter();
+  const [currentSlide, setCurrentSlide] = useState(0);
+
   const [productos, setProductos] = useState<Product[]>([]);
-  const [categorias, setCategorias] = useState<Category[]>([]);
+  const [categorias, setCategorias] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const carouselRef = useRef<HTMLDivElement>(null);
-  const [isPaused, setIsPaused] = useState(false);
 
-  const BASE_URL = "http://127.0.0.1:8000";
+  const [isNewProductsHovered, setIsNewProductsHovered] = useState(false);
 
-  const imagenCategoria = (url?: string) => {
-    if (!url) return "/placeholder.png";
-    const fixed = url.replace(/\\/g, "/"); 
-    return fixed.startsWith("http") ? fixed : `${BASE_URL}${fixed}`;
+  const heroSlides = [
+    {
+      id: 0,
+      title: 'Hasta 50% de descuentos en Electrónica',
+      description:
+        'Descubre las últimas ofertas en la mejor tecnología. Promoción por tiempo limitado.',
+      buttonText: 'Explorar electrónica',
+      bgColor: 'from-gray-100 to-emerald-50',
+      imageColor: 'bg-emerald-900',
+      image: 'Electronica.jpg',
+      categorySearch: 'Electrónica', // 🔹 texto que usaremos en /category?search=
+    },
+    {
+      id: 1,
+      title: 'Nueva Colección de Moda',
+      description: 'Explora las últimas tendencias en ropa y accesorios.',
+      buttonText: 'Ver moda',
+      bgColor: 'from-gray-100 to-emerald-50',
+      imageColor: 'bg-purple-900',
+      image: '/Moda.jpg',
+      categorySearch: 'Moda',
+    },
+    {
+      id: 2,
+      title: 'Equipamiento Deportivo Premium',
+      description:
+        'Todo lo que necesitas para alcanzar tus metas. Calidad y rendimiento garantizado.',
+      buttonText: 'Ver deportes',
+      bgColor: 'from-gray-100 to-emerald-50',
+      imageColor: 'bg-blue-900',
+      image: '/Deportes.jpg',
+      categorySearch: 'Deportes',
+    },
+  ];
+
+  const categoryImages = [
+    'electronicac.jpg',
+    'Hogar.jpg',
+    'Herramientas.jpg',
+    'Juguetes.jpg',
+  ];
+
+  // URL base de STOCK
+  const rawApiUrl = process.env.NEXT_PUBLIC_API_URL ?? '';
+  const API_URL =
+    rawApiUrl && rawApiUrl.trim() !== ''
+      ? rawApiUrl
+      : 'http://localhost:8001/v1';
+
+  // Imagen de producto desde STOCK
+  const imagenProducto = (producto: Product) => {
+    const primary = producto.images.find((img) => img.is_primary);
+    const candidate = primary ?? producto.images[0];
+
+    if (!candidate || !candidate.url) return '/placeholder.png';
+    return buildImageUrl(candidate.url);
   };
- 
+
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchProductos = async () => {
       try {
-        const [resCat, resProd] = await Promise.all([
-          fetch("http://127.0.0.1:8000/api/category"),
-          fetch("http://127.0.0.1:8000/api/product"),
-        ]);
+        const url = `${API_URL}/productos`;
+        console.log('🏠 HomePage llamando a STOCK:', url);
 
-        if (!resCat.ok || !resProd.ok) throw new Error("Error al cargar datos");
+        const res = await fetch(url);
+        if (!res.ok) {
+          throw new Error(`STOCK respondió ${res.status}`);
+        }
 
-        const [catsData, prodData] = await Promise.all([
-          resCat.json(),
-          resProd.json(),
-        ]);
+        const data: BackendProducto[] = await res.json();
 
-        setCategorias(catsData);
-        setProductos(prodData);
-      } catch (err: unknown) {
-        setError(err instanceof Error ? err.message : String(err));
+        const mapped: Product[] = data.map((p) => {
+          const categoriaPrincipal =
+            p.categorias && p.categorias.length > 0
+              ? p.categorias[0].nombre
+              : 'Sin categoría';
+
+          const precioNumber = Number(p.precio.replace(',', '.'));
+
+          const images: ProductImage[] = (p.imagenes ?? []).map((img) => ({
+            url: img.url,
+            is_primary: img.esPrincipal,
+          }));
+
+          return {
+            id: p.id,
+            name: p.nombre,
+            price: isNaN(precioNumber) ? 0 : precioNumber,
+            category: categoriaPrincipal,
+            images,
+          };
+        });
+
+        setProductos(mapped);
+
+        const cats = Array.from(new Set(mapped.map((p) => p.category))).filter(
+          Boolean
+        );
+        setCategorias(cats);
+        setError(null);
+      } catch (err) {
+        console.error('Error al obtener productos en HomePage:', err);
+        setError(
+          err instanceof Error ? err.message : 'Error desconocido al cargar datos'
+        );
       } finally {
         setLoading(false);
       }
     };
 
-    fetchData();
-  }, []);
+    fetchProductos();
+  }, [API_URL]);
 
-  useEffect(() => {
-  const container = carouselRef.current;
-  if (!container || isPaused) return;
+  // “Nuevos productos” desde STOCK
+  const newProducts = productos.slice(0, Math.min(16, productos.length));
 
-  const autoScroll = setInterval(() => {
-    const maxScroll = container.scrollWidth / 2; // solo la mitad, porque duplicamos productos
-
-    if (container.scrollLeft >= maxScroll) {
-      // Reinicia al principio sin que se note 
-      container.scrollTo({ left: 0, behavior: "auto" });
-    } else {
-      container.scrollBy({ left: 1, behavior: "auto" });
-    }
-  }, 15);
-
-  return () => clearInterval(autoScroll);
-}, [isPaused]);
-
-
-if (loading || error) {
-  return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50">
-      {loading && <p className="text-gray-600 text-lg font-medium">Cargando datos...</p>}
-      {error && <p className="text-red-500 text-lg font-medium">{error}</p>}
-    </div>
-  );
-  }
-
-
-  
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Encabezado */}
-      <header className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-gradient-to-br from-cyan-400 to-blue-500 rounded-lg flex items-center justify-center">
-                <ShoppingCart className="w-5 h-5 text-white" />
-              </div>
-              <span className="text-xl font-semibold text-gray-900">Compras</span>
-            </div>
-
-            <div className="flex-grow w-1/2 max-w-lg justify-center">
-                <div className="relative ">
-                  <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                  <input
-                    type="text"
-                    placeholder="Buscar productos, marcas y más"
-                    className="w-full pl-12 pr-4 py-2 bg-white border placeholder-gray-500 text-gray-700 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-transparent"
-                  />
-                </div>
-            </div>
-
-            <div className="flex items-center gap-4">
+      {/* Hero Banner */}
+      <div
+        className={`bg-gradient-to-r ${heroSlides[currentSlide].bgColor} transition-all duration-500`}
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+            <div>
+              <h1 className="text-4xl lg:text-5xl font-bold text-gray-900 mb-4">
+                {heroSlides[currentSlide].title}
+              </h1>
+              <p className="text-gray-600 mb-6">
+                {heroSlides[currentSlide].description}
+              </p>
+              {/* 🔹 Botón del hero navega a /category?search=... */}
               <button
-                onClick={() => {
-                  localStorage.removeItem("token");
-                  window.location.href = "/login";
-                }}
-                className="px-4 py-2 rounded-md border border-gray-300 bg-red-100 text-sm text-gray-700 hover:text-red-700 transition-colors"
+                className="bg-gray-700 text-white px-6 py-3 rounded-lg font-medium hover:bg-gray-800 transition"
+                onClick={() =>
+                  router.push(
+                    `/category?search=${encodeURIComponent(
+                      heroSlides[currentSlide].categorySearch
+                    )}`
+                  )
+                }
               >
-                Cerrar Sesión
+                {heroSlides[currentSlide].buttonText}
               </button>
-              <button className="w-10 h-10 bg-gradient-to-br from-cyan-400 to-blue-500 rounded-full flex items-center justify-center text-white font-semibold hover:shadow-lg transition-shadow">
-                <User className="w-5 h-5" />
-              </button>
+              <div className="flex gap-2 mt-4">
+                {heroSlides.map((slide, index) => (
+                  <button
+                    key={slide.id}
+                    onClick={() => setCurrentSlide(index)}
+                    className={`h-2 rounded-full transition-all duration-300 ${
+                      currentSlide === index
+                        ? 'bg-gray-400 w-6'
+                        : 'bg-gray-300 w-2'
+                    }`}
+                  />
+                ))}
+              </div>
+            </div>
+
+            <div
+              className={`relative h-80 ${heroSlides[currentSlide].imageColor} rounded-2xl overflow-hidden transition-colors duration-500`}
+            >
+              <div className="absolute inset-0 flex items-center justify-center">
+                <Image
+                  src={heroSlides[currentSlide].image}
+                  alt="Hero Image"
+                  fill
+                  className="object-cover"
+                  unoptimized
+                />
+              </div>
             </div>
           </div>
         </div>
-      </header>
+      </div>
 
-      
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-         <section className="mb-12">
-        <h2 className="text-2xl font-bold text-gray-900 mb-6">Categorías Destacadas</h2>
-        {categorias.length === 0 ? (
-          <p className="text-gray-500">No hay categorías disponibles.</p>
-        ) : (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            {categorias.slice(0, 4).map((categoria: Category) => (
-              <div key={categoria.id} className="group cursor-pointer">
-                <div className="bg-gradient-to-br relative from-gray-100 to-gray-200 aspect-square rounded-xl flex items-center justify-center mb-3 group-hover:shadow-lg transition-shadow overflow-hidden">
-                  <Link href="/category">
+      {/* Mensaje de carga / error */}
+      {loading && (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <p className="text-gray-600">Cargando productos...</p>
+        </div>
+      )}
+      {error && !loading && (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <p className="text-red-500">Error al cargar productos: {error}</p>
+        </div>
+      )}
+
+      {/* Categories (desde productos, con imágenes fijas) */}
+      {!loading && !error && (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <h2 className="text-2xl font-bold text-gray-900 mb-6">
+            Explora Nuestras Categorías
+          </h2>
+
+          {categorias.length === 0 ? (
+            <p className="text-gray-500">No hay categorías disponibles.</p>
+          ) : (
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              {categorias.slice(0, 4).map((cat, idx) => (
+                <div
+                  key={cat}
+                  className="relative rounded-2xl h-48 overflow-hidden cursor-pointer hover:scale-105 transition-transform group"
+                  // 🔹 Click en categoría → /category?search=<nombre>
+                  onClick={() =>
+                    router.push(
+                      `/category?search=${encodeURIComponent(cat)}`
+                    )
+                  }
+                >
                   <Image
-                    src={imagenCategoria(categoria.image_url)}
-                    alt={categoria.name}
+                    src={categoryImages[idx]}
+                    alt={cat}
                     fill
-                    className="object-cover w-full h-full"
+                    className="object-cover group-hover:brightness-75 transition"
                     unoptimized
-                    priority
                   />
-                  </Link>
+                  <div className="absolute bottom-0 left-0 right-0 bg-black/40 p-4">
+                    <h3 className="text-xl font-semibold text-white">{cat}</h3>
+                  </div>
                 </div>
-                <h2 className="text-center text-lg md:text-xl font-semibold text-gray-900 leading-tight">
-                  {categoria.name}
-                </h2>
-                <h3 className="text-center text-sm font-normal text-gray-500 mt-1">
-                  {categoria.description}
-                </h3>
-              </div>
-            ))}
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* New Products */}
+      {!loading && !error && newProducts.length > 0 && (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <h2 className="text-2xl font-bold text-gray-900 mb-6">
+            Nuevos Productos
+          </h2>
+          <div
+            className="relative overflow-hidden"
+            onMouseEnter={() => setIsNewProductsHovered(true)}
+            onMouseLeave={() => setIsNewProductsHovered(false)}
+          >
+            <div
+              className="flex gap-6 animate-scroll"
+              style={{
+                width: `${newProducts.length * 250}px`,
+                animationPlayState: isNewProductsHovered ? 'paused' : 'running',
+              }}
+            >
+              {[...newProducts, ...newProducts].map((product, index) => (
+                <div
+                  key={`${product.id}-${index}`}
+                  className="bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-md transition cursor-pointer flex-shrink-0 w-56"
+                  // 🔹 Click en producto → /product/<id>
+                  onClick={() => router.push(`/product/${product.id}`)}
+                >
+                  <div className="h-48 flex items-center justify-center relative">
+                    <Image
+                      src={imagenProducto(product)}
+                      alt={product.name}
+                      fill
+                      className="object-contain"
+                      unoptimized
+                    />
+                  </div>
+                  <div className="p-4">
+                    <h3 className="font-medium text-gray-900 text-sm mb-1">
+                      {product.name}
+                    </h3>
+                    <p className="text-xs text-gray-500 mb-2">
+                      {product.category}
+                    </p>
+                    <p className="text-lg font-bold text-gray-900">
+                      $
+                      {product.price.toLocaleString('es-ES', {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
-        )}
-      </section>
-        {/* 🔹 Estado de carga / error */}
-        {loading && (
-          <p className="text-center text-gray-500 text-lg font-medium">Cargando productos...</p>
-        )}
-        {error && (
-          <p className="text-center text-red-500 text-lg font-medium">{error}</p>
-        )}
+        </div>
+      )}
 
-        {/* 🔹 Mostrar productos */}
-        {!loading && !error && productos.length > 0 && (
-          <section className="relative">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-gray-900">Productos disponibles</h2>
-            </div>
+      <style jsx>{`
+        @keyframes scroll {
+          0% {
+            transform: translateX(0);
+          }
+          100% {
+            transform: translateX(-50%);
+          }
+        }
 
-            <div className="relative group">
-              {/* Carrusel */}
-              <div
-                ref={carouselRef}
-                onMouseEnter={() => setIsPaused(true)}
-                onMouseLeave={() => setIsPaused(false)}
-                className="flex gap-6 overflow-x-auto scrollbar-hide pb-4 px-2"
-                style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
-        
-              >
-                {[...productos, ...productos].map((p: Product, index: number) => {
-                  const primary = p.images?.find((img: ProductImage) => img.is_primary)?.url;
-                  const src = p.main_image_url || (primary ? `http://127.0.0.1:8000${primary}` : '/placeholder.png');
-
-                  return (
-                    <div
-                      key={`${p.id}-${index}`}
-                      className="flex-none w-64 bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all cursor-pointer hover:scale-105"
-                    >
-                      <div className="aspect-square relative bg-gradient-to-br from-blue-50 to-blue-100 overflow-hidden rounded-t-xl">
-                        <Link href={`/product/${p.id}`}>
-                        <Image
-                          src={src}
-                          alt={p.name}
-                          fill
-                          unoptimized
-                          className="object-cover object-center"
-                        />
-                        </Link>
-                      </div>
-                      <div className="p-4">
-                        <h3 className="font-medium text-gray-700 mb-1 truncate">{p.name}</h3>
-                        <p className="text-xl text-gray-900">$ {p.price}</p>
-                      </div>
-                    
-                    </div>
-                  );
-                })}
-              </div>
-
-            </div>
-          </section>
-        )}
-
-        {/* Si no hay productos */}
-        {!loading && !error && productos.length === 0 && (
-          <p className="text-center text-gray-500 text-lg font-medium">
-            No hay productos disponibles.
-          </p>
-        )}
-      </main>
+        .animate-scroll {
+          animation: scroll 30s linear infinite;
+        }
+      `}</style>
     </div>
   );
 }
