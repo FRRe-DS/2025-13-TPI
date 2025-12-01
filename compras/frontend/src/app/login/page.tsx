@@ -11,26 +11,13 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg shadow-lg p-8 w-full max-w-md">
-        <div className="flex justify-center mb-6">
-          <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
-          </div>
-        </div>
-
-        <h2 className="text-2xl font-semibold text-center text-gray-800 mb-2">
-          Accede a tu cuenta
-        </h2>
-
-        <p className="text-center text-gray-600 text-sm mb-6">
-          ¿No tienes una cuenta?{' '}
-          <a href="/register" className="text-blue-500 hover:text-blue-600 font-medium">
-            Regístrate
-          </a>
+    <div className="min-h-screen flex items-center justify-center bg-gray-100">
+      <div className="bg-white shadow-lg rounded-lg p-8 w-full max-w-md">
+        <h1 className="text-2xl font-bold mb-4 text-center">Iniciar sesión</h1>
+        <p className="text-gray-600 mb-6 text-center">
+          Serás redirigido al formulario de inicio de sesión de Keycloak. Luego, podrás volver y usar el portal de compras.
         </p>
-
-
-
+        <form onSubmit={handleLogin} className="space-y-4">
           <button
             type="submit"
             disabled={isLoading}
@@ -38,7 +25,11 @@ export default function LoginPage() {
           >
             {isLoading ? 'Redirigiendo...' : 'Iniciar sesión con Keycloak'}
           </button>
+        </form>
       </div>
     </div>
   );
 } 
+
+
+          
