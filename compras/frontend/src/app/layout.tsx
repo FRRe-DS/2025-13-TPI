@@ -1,11 +1,26 @@
-import { AuthProvider } from '@/context/AuthContext';
-import './globals.css';
+"use client";
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+import "./globals.css";
+import { AuthProvider } from "@/context/AuthContext";
+import Navbar from "@/components/Navbar";
+import { usePathname } from "next/navigation";   
+import type { ReactNode } from "react";
+
+export default function RootLayout({ children }: { children: ReactNode }) {
+  const pathname = usePathname();
+
+ 
+  const hideNavbar = pathname === "/login";      
+
   return (
     <html lang="es">
       <body>
-        <AuthProvider>{children}</AuthProvider>
+        <AuthProvider>
+         
+          {!hideNavbar && <Navbar />}
+
+          <main>{children}</main>
+        </AuthProvider>
       </body>
     </html>
   );

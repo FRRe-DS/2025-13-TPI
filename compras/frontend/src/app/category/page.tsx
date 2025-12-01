@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { ChevronRight, ChevronDown } from 'lucide-react';
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { buildImageUrl } from '@/utils/imageUrl';
 
 // ========= Tipos usados por el FRONT =========
 
@@ -53,7 +54,7 @@ interface BackendProducto {
   id: number;
   nombre: string;
   descripcion: string;
-  precio: string;           // "1499.99"
+  precio: string; // "1499.99"
   stockDisponible: number;
   pesoKg?: string;
   dimensiones?: BackendDimensiones;
@@ -62,16 +63,22 @@ interface BackendProducto {
   imagenes?: BackendImage[];
 }
 
-export default function CatalogoAccesorios() {
+// =================== COMPONENTE INTERNO (usa useSearchParams) ===================
+
+function CategoryPageInner() {
   const [productos, setProductos] = useState<Product[]>([]);
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState<string | null>(null);
   const [ordenar, setOrdenar] = useState('destacado');
   const [precioDesde, setPrecioDesde] = useState('');
   const [precioHasta, setPrecioHasta] = useState('');
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // 🔍 texto que viene de /category?search=...
+  const searchQuery = (searchParams.get('search') || '').toLowerCase();
 
   // Base de la API → STOCK
-  const rawApiUrl = process.env.NEXT_PUBLIC_API_URL;
+  const rawApiUrl = process.env.NEXT_PUBLIC_API_URL ?? '';
   const API_URL =
     rawApiUrl && rawApiUrl.trim() !== ''
       ? rawApiUrl
@@ -123,13 +130,23 @@ export default function CatalogoAccesorios() {
     new Set(productos.map((p) => p.category))
   ).filter(Boolean);
 
+  // 🔎 Filtro combinado: categoría + precio + búsqueda por texto
   const productosFiltrados = productos.filter((p) => {
     const coincideCategoria = categoriaSeleccionada
       ? p.category === categoriaSeleccionada
       : true;
+
     const desde = precioDesde ? parseFloat(precioDesde) : 0;
     const hasta = precioHasta ? parseFloat(precioHasta) : Infinity;
-    return coincideCategoria && p.price >= desde && p.price <= hasta;
+
+    const nombre = p.name.toLowerCase();
+    const categoria = p.category.toLowerCase();
+
+    const coincideBusqueda = searchQuery
+      ? nombre.includes(searchQuery) || categoria.includes(searchQuery)
+      : true;
+
+    return coincideCategoria && coincideBusqueda && p.price >= desde && p.price <= hasta;
   });
 
   const productosOrdenados = [...productosFiltrados].sort((a, b) => {
@@ -147,12 +164,19 @@ export default function CatalogoAccesorios() {
 
   // 🔹 función auxiliar para mostrar la imagen del producto
   const imagenProducto = (producto: Product) => {
-    const primary = producto.images.find((img) => img.is_primary)?.url;
-    const fallback = producto.images[0]?.url;
-    const final = primary || fallback || '/placeholder.png';
+    const primary = producto.images.find((img) => img.is_primary);
+    const candidate = primary ?? producto.images[0];
 
-    // normalizar URL (por si viene sin http)
-    return final.startsWith('http') ? final : `${API_URL}${final}`;
+    if (!candidate || !candidate.url) {
+      console.log('Producto sin imágenes en catálogo →', producto.name);
+      return '/placeholder.png';
+    }
+
+    const raw = candidate.url;
+    const finalUrl = buildImageUrl(raw);
+
+    console.log('Imagen catálogo →', producto.name, { raw, finalUrl });
+    return finalUrl;
   };
 
   return (
@@ -166,6 +190,14 @@ export default function CatalogoAccesorios() {
           <span className="text-gray-900">Categorías</span>
         </nav>
 
+        {/* Si viene búsqueda, lo mostramos arriba como contexto */}
+        {searchQuery && (
+          <p className="text-sm text-gray-700 mb-4">
+            Resultados para:{' '}
+            <span className="font-semibold">&quot;{searchQuery}&quot;</span>
+          </p>
+        )}
+
         <div className="grid lg:grid-cols-4 gap-8">
           {/* 🔹 FILTRO IZQUIERDO */}
           <div className="lg:col-span-1 space-y-6">
@@ -178,7 +210,6 @@ export default function CatalogoAccesorios() {
                   key={index}
                   onClick={() => {
                     setCategoriaSeleccionada(nombre);
-                    router.push(`/category/${encodeURIComponent(nombre)}`);
                   }}
                   className={`block w-full text-left px-3 py-2 text-sm rounded transition-colors ${
                     categoriaSeleccionada === nombre
@@ -235,7 +266,9 @@ export default function CatalogoAccesorios() {
 
             {productosOrdenados.length === 0 ? (
               <p className="text-gray-500 text-center">
-                No hay productos disponibles.
+                {searchQuery
+                  ? `No se encontraron productos que coincidan con "${searchQuery}".`
+                  : 'No hay productos disponibles.'}
               </p>
             ) : (
               <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -251,7 +284,7 @@ export default function CatalogoAccesorios() {
                         alt={producto.name}
                         fill
                         sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                        className="object-cover"
+                        className="object-contain"
                         unoptimized
                       />
                     </div>
@@ -271,5 +304,15 @@ export default function CatalogoAccesorios() {
         </div>
       </div>
     </div>
+  );
+}
+
+// =================== EXPORT POR DEFECTO CON SUSPENSE ===================
+
+export default function CategoryPage() {
+  return (
+    <Suspense fallback={<div className="p-8">Cargando categorías...</div>}>
+      <CategoryPageInner />
+    </Suspense>
   );
 }
