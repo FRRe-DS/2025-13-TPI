@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, status
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
 import os
 import httpx
 
@@ -16,6 +16,8 @@ CLIENT_SECRET = os.getenv("KEYCLOAK_CLIENT_SECRET", "")
 TOKEN_URL = f"{KEYCLOAK_BASE_URL}/realms/{KEYCLOAK_REALM}/protocol/openid-connect/token"
 
 
+router = APIRouter(prefix="/api/auth", tags=["auth"])
+
 class CodeExchangeIn(BaseModel):
   code: str
   redirect_uri: str
@@ -26,6 +28,12 @@ class LoginIn(BaseModel):
   email: str
   password: str
 
+
+class RegisterPayload(BaseModel):
+  first_name: str
+  last_name: str
+  email: EmailStr
+  password: str
 
 class TokenResponse(BaseModel):
   access_token: str
@@ -115,3 +123,96 @@ async def login_with_credentials(body: LoginIn):
       )
 
   return resp.json()
+
+async def get_keycloak_admin_token() -> str:
+    """
+    Obtiene un access_token de administrador para usar la Admin API de Keycloak.
+    Podés hacerlo con:
+    - usuario/contraseña admin, o
+    - client credentials de un cliente confidencial con 'service account'.
+    Aquí te muestro con cliente confidencial (recomendado para backend).
+    """
+    keycloak_base = os.getenv("KEYCLOAK_BASE_URL", "http://keycloak:8080")
+    realm = os.getenv("KEYCLOAK_ADMIN_REALM", "master")
+    client_id = os.getenv("KEYCLOAK_ADMIN_CLIENT_ID")
+    client_secret = os.getenv("KEYCLOAK_ADMIN_CLIENT_SECRET")
+
+    if not client_id or not client_secret:
+        raise HTTPException(
+            status_code=500,
+            detail="Faltan KEYCLOAK_ADMIN_CLIENT_ID o KEYCLOAK_ADMIN_CLIENT_SECRET",
+        )
+
+    token_url = f"{keycloak_base}/realms/{realm}/protocol/openid-connect/token"
+
+    data = {
+        "grant_type": "client_credentials",
+        "client_id": client_id,
+        "client_secret": client_secret,
+    }
+
+    async with httpx.AsyncClient() as client:
+        resp = await client.post(
+            token_url,
+            data=data,
+            headers={"Content-Type": "application/x-www-form-urlencoded"},
+        )
+
+    if resp.status_code != 200:
+        print("Error obteniendo admin token:", resp.status_code, resp.text)
+        raise HTTPException(status_code=500, detail="No se pudo obtener token de admin")
+
+    token_data = resp.json()
+    return token_data["access_token"]
+
+@router.post("/register", status_code=201)
+async def register_user(payload: RegisterPayload):
+    keycloak_base = os.getenv("KEYCLOAK_BASE_URL", "http://keycloak:8080")
+    realm = os.getenv("KEYCLOAK_REALM", "tpi")
+
+    admin_token = await get_keycloak_admin_token()
+
+    create_user_url = f"{keycloak_base}/admin/realms/{realm}/users"
+
+    user_body = {
+        "username": payload.email,
+        "email": payload.email,
+        "firstName": payload.first_name,
+        "lastName": payload.last_name,
+        "enabled": True,
+        "emailVerified": False,
+        "credentials": [
+            {
+                "type": "password",
+                "value": payload.password,
+                "temporary": False,
+            }
+        ],
+    }
+
+    async with httpx.AsyncClient() as client:
+        resp = await client.post(
+            create_user_url,
+            json=user_body,
+            headers={
+                "Authorization": f"Bearer {admin_token}",
+                "Content-Type": "application/json",
+            },
+        )
+
+    if resp.status_code == 201:
+        # Usuario creado OK
+        return {"message": "Usuario creado en Keycloak"}
+
+    if resp.status_code == 409:
+        # Conflicto: probablemente ya existe el email/username
+        raise HTTPException(
+            status_code=409,
+            detail="Ya existe un usuario con ese correo.",
+        )
+
+    print("Error creando usuario en Keycloak:", resp.status_code, resp.text)
+    raise HTTPException(
+        status_code=500,
+        detail=f"Error al crear usuario en Keycloak ({resp.status_code})",
+    )
