@@ -1,5 +1,4 @@
-# app/core/keycloak_security.py
-
+# app/security.py
 import os
 from functools import lru_cache
 
@@ -7,23 +6,29 @@ import httpx
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import jwt, JWTError
+from pydantic import BaseModel
 
-# === Config de Keycloak ===
+# URL de tu Keycloak
 KEYCLOAK_BASE_URL = os.getenv("KEYCLOAK_BASE_URL", "http://keycloak:8080")
 KEYCLOAK_REALM = os.getenv("KEYCLOAK_REALM", "ds-2025-realm")
 
 ISSUER = f"{KEYCLOAK_BASE_URL}/realms/{KEYCLOAK_REALM}"
 JWKS_URL = f"{ISSUER}/protocol/openid-connect/certs"
 
-# Solo lo usamos para leer el header Authorization: Bearer <token>
+# Sólo usamos esto para que FastAPI lea el header Authorization: Bearer <token>
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
+
+class KCUser(BaseModel):
+    sub: str
+    email: str | None = None
+    preferred_username: str | None = None
+    given_name: str | None = None
+    family_name: str | None = None
 
 
 @lru_cache()
-def get_jwks() -> dict:
-    """
-    Descarga y cachea las claves públicas (JWKS) de Keycloak.
-    """
+def get_jwks():
+    """Descarga y cachea la JWKS de Keycloak (claves públicas RSA)."""
     resp = httpx.get(JWKS_URL, timeout=5.0)
     if resp.status_code != 200:
         print("Error obteniendo JWKS de Keycloak:", resp.status_code, resp.text)
@@ -32,10 +37,7 @@ def get_jwks() -> dict:
 
 
 def decode_keycloak_token(token: str) -> dict:
-    """
-    Verifica la firma del JWT usando las claves públicas de Keycloak
-    y devuelve los claims decodificados.
-    """
+    """Verifica la firma del JWT usando la JWKS de Keycloak y devuelve los claims."""
     jwks = get_jwks()
 
     try:
@@ -57,58 +59,37 @@ def decode_keycloak_token(token: str) -> dict:
     if key is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="No se encontró clave pública para ese 'kid'",
+            detail="No se encontró clave para ese 'kid'",
         )
 
     try:
+        # verify_aud lo desactivamos por simplicidad, si querés podés validarlo
         decoded = jwt.decode(
             token,
             key,
             algorithms=[unverified_header.get("alg", "RS256")],
-            issuer=ISSUER,
             audience=None,
-            options={"verify_aud": False},  # si querés validar 'aud', lo podés activar
+            issuer=ISSUER,
+            options={"verify_aud": False},
         )
         return decoded
-    except JWTError as e:
-        print("Error decodificando token KC:", e)
+    except JWTError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Token inválido o expirado",
         )
 
 
-# === DEPENDENCIAS QUE USA TU ROUTER ===
+async def get_current_user(token: str = Depends(oauth2_scheme)) -> KCUser:
+    """Dependencia que devuelve el usuario ya validado a partir del token."""
+    decoded = decode_keycloak_token(token)
 
-async def require_auth(token_str: str = Depends(oauth2_scheme)) -> dict:
-    """
-    Dependencia que:
-      - lee Authorization: Bearer <token>
-      - verifica el token contra Keycloak
-      - devuelve el payload decodificado (dict)
-    """
-    decoded = decode_keycloak_token(token_str)
-    return decoded
+    user_data = {
+        "sub": decoded.get("sub"),
+        "email": decoded.get("email"),
+        "preferred_username": decoded.get("preferred_username"),
+        "given_name": decoded.get("given_name"),
+        "family_name": decoded.get("family_name"),
+    }
 
-
-def require_scope(required_scope: str):
-    """
-    Crea una dependencia que verifica que el token tenga un scope dado.
-
-    Se usa así:
-      dependencies=[Depends(require_scope("usuarios:read"))]
-    """
-
-    async def _check_scope(token: dict = Depends(require_auth)):
-        # OJO: depende de cómo estés mapeando scopes/roles.
-        # Aquí asumo que Keycloak mete los scopes en el claim "scope" separado por espacios.
-        scope_str = token.get("scope", "") or ""
-        scopes = scope_str.split()
-
-        if required_scope not in scopes:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail=f"No tenés el scope requerido: {required_scope}",
-            )
-
-    return _check_scope
+    return KCUser(**user_data)

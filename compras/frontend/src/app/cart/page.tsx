@@ -1,16 +1,37 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useCart } from '@/context/CartContext'; // 👈 IMPORTAMOS EL CONTEXTO
+import { useCart } from '@/context/CartContext';
+import { useState } from 'react';
 
 export default function CartView() {
   const router = useRouter();
 
-  // 👇 Todo viene del contexto global
   const { items: cartItems, subtotal, updateQuantity, removeFromCart } = useCart();
 
   const shipping = 5.99;
   const total = subtotal + shipping;
+
+  // 👇 Estado local para la dirección de entrega
+  const [address, setAddress] = useState({
+    alias: 'Casa',
+    street: '',
+    city: '',
+    province: '',
+    postalCode: '',
+    country: '',
+  });
+
+  // Handler genérico para inputs
+  const handleAddressChange = (
+    field: keyof typeof address,
+    value: string
+  ) => {
+    setAddress((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
@@ -19,7 +40,6 @@ export default function CartView() {
           Resumen de pedido
         </h1>
 
-        {/* Si el carrito está vacío */}
         {cartItems.length === 0 ? (
           <div className="bg-white rounded-lg shadow-sm p-6">
             <p className="text-gray-700 mb-4">
@@ -27,7 +47,7 @@ export default function CartView() {
             </p>
             <button
               onClick={() => router.push('/')}
-              className="mt-2 inline-flex items-center px-4 py-2 rounded-lg bg-blue-500 text-white text-sm font-medium hover:bg-blue-600 transition"
+              className="mt-2 inline-flex items-center px-4 py-2 rounded-lg bg-gray-500 text-white text-sm font-medium hover:bg-gray-600 transition"
             >
               Volver a la tienda
             </button>
@@ -45,7 +65,6 @@ export default function CartView() {
                     className="flex items-center justify-between py-4 border-b border-gray-100 last:border-0"
                   >
                     <div className="flex items-center gap-4 flex-1">
-                      {/* Placeholder de imagen; si luego quieres usar la imagen, puedes agregar un <Image /> */}
                       <div className="w-16 h-16 bg-gray-200 rounded-lg flex-shrink-0" />
                       <div className="flex-1">
                         <h3 className="font-medium text-gray-900">
@@ -98,12 +117,13 @@ export default function CartView() {
               </div>
             </div>
 
-            {/* Dirección de entrega */}
+            {/* Dirección de entrega (formulario) */}
             <div className="bg-white rounded-lg shadow-sm p-6">
               <h2 className="font-semibold text-gray-900 mb-4">
                 Dirección de entrega
               </h2>
-              <div className="flex items-start gap-3">
+
+              <div className="flex items-start gap-3 mb-4">
                 <svg
                   className="w-5 h-5 text-blue-500 mt-0.5"
                   fill="none"
@@ -117,16 +137,107 @@ export default function CartView() {
                     d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
                   />
                 </svg>
-                <div>
-                  <p className="font-medium text-gray-900">Casa</p>
-                  <p className="text-sm text-gray-600">
-                    Calle Principal 123, Ciudad, País
-                  </p>
+                <div className="w-full space-y-4">
+                  {/* Alias de la dirección (Casa, Trabajo, etc.) */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Nombre de la dirección
+                    </label>
+                    <input
+                      type="text"
+                      value={address.alias}
+                      onChange={(e) =>
+                        handleAddressChange('alias', e.target.value)
+                      }
+                      placeholder="Ej.: Casa, Trabajo…"
+                      className="w-full border text-gray-500 border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+
+                  {/* Calle y número */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Calle y número
+                    </label>
+                    <input
+                      type="text"
+                      value={address.street}
+                      onChange={(e) =>
+                        handleAddressChange('street', e.target.value)
+                      }
+                      placeholder="Calle Principal 123"
+                      className="w-full border text-gray-500 border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+
+                  {/* Ciudad / Provincia / Código postal */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Ciudad
+                      </label>
+                      <input
+                        type="text"
+                        value={address.city}
+                        onChange={(e) =>
+                          handleAddressChange('city', e.target.value)
+                        }
+                        placeholder="Ciudad"
+                        className="w-full border text-gray-500 border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Provincia
+                      </label>
+                      <input
+                        type="text"
+                        value={address.province}
+                        onChange={(e) =>
+                          handleAddressChange('province', e.target.value)
+                        }
+                        placeholder="Provincia"
+                        className="w-full border border-gray-300 text-gray-500 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Código postal
+                      </label>
+                      <input
+                        type="text"
+                        value={address.postalCode}
+                        onChange={(e) =>
+                          handleAddressChange('postalCode', e.target.value)
+                        }
+                        placeholder="CP"
+                        className="w-full border border-gray-300 rounded-lg text-gray-500 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                  </div>
+
+                  {/* País */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      País
+                    </label>
+                    <input
+                      type="text"
+                      value={address.country}
+                      onChange={(e) =>
+                        handleAddressChange('country', e.target.value)
+                      }
+                      placeholder="País"
+                      className="w-full border border-gray-300 text-gray-500 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
                 </div>
-                <button className="ml-auto text-blue-500 hover:text-blue-600 text-sm font-medium">
-                  Cambiar
-                </button>
               </div>
+
+              {/* Vista rápida (opcional) */}
+              <p className="text-xs text-gray-500 mt-2">
+                Esta será la dirección utilizada para el envío de tu pedido.
+              </p>
             </div>
 
             {/* Resumen de costos */}
@@ -156,7 +267,7 @@ export default function CartView() {
                 </div>
               </div>
 
-              <button className="w-full mt-6 bg-blue-500 text-white py-3 rounded-lg font-medium hover:bg-blue-600 transition">
+              <button className="w-full mt-6 bg-gray-500 text-white py-3 rounded-lg font-medium hover:bg-gray-600 transition">
                 Confirmar compra
               </button>
             </div>
