@@ -6,11 +6,18 @@ from fastapi import HTTPException
 
 SHIPPING_API_URL = os.getenv("SHIPPING_API_URL", "http://shipping_back:3010")
 
+def _auth_headers(access_token: str) -> Dict[str, str]:
+    # get_bearer_token suele devolver el token "pelado", así que le agregamos "Bearer "
+    return {"Authorization": f"Bearer {access_token}"}
+
+
 # =============== SHIPPING COST ===============
 
-async def cotizar_envio(payload: dict) -> dict:
+async def cotizar_envio(payload: dict, access_token: str) -> dict:
+    headers = _auth_headers(access_token)
+
     async with httpx.AsyncClient(base_url=SHIPPING_API_URL, timeout=10.0) as client:
-        resp = await client.post("/shipping/cost", json=payload)
+        resp = await client.post("/shipping/cost", json=payload, headers=headers)
 
     try:
         resp.raise_for_status()
@@ -21,6 +28,7 @@ async def cotizar_envio(payload: dict) -> dict:
         )
 
     return resp.json()
+
 
 # =============== TRANSPORT METHODS ===============
 

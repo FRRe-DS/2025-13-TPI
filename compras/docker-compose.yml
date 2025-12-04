@@ -55,12 +55,12 @@ services:
     environment:
       - STOCK_API_URL=http://stock:8000/v1
       - LOGISTICS_API_URL=http://shipping_back:3010
-      - KEYCLOAK_ISSUER=${KEYCLOAK_ISSUER}
       - SHIPPING_API_URL=${SHIPPING_API_URL}
       - KEYCLOAK_TOKEN_URL=${KEYCLOAK_TOKEN_URL}
       - KEYCLOAK_CLIENT_ID=${KEYCLOAK_CLIENT_ID}
       - KEYCLOAK_CLIENT_SECRET=${KEYCLOAK_CLIENT_SECRET}
       - SHIPPING_SCOPES=${SHIPPING_SCOPES}
+      - KEYCLOAK_ISSUER_URL=http://keycloak:8080/realms/ds-2025-realm
     volumes:
       - ./backend:/app
     networks:
@@ -145,9 +145,9 @@ services:
       PORT: 3010
       KEYCLOAK_AUTH_SERVER_URL: http://keycloak:8080
       KEYCLOAK_REALM: ds-2025-realm
+      KEYCLOAK_ISSUER_URL: http://keycloak:8080/realms/ds-2025-realm
       # URL interna del servicio de stock para que ellos lo llamen
       STOCK_SERVICE_URL: http://stock:8000/v1
-      KEYCLOAK_ISSUER_URL: http://keycloak:8080/realms/ds-2025-realm
     depends_on:
       shipping_mysql:
         condition: service_healthy
