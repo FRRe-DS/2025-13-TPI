@@ -1,96 +1,199 @@
+# app/crud/shipping_client.py
 import os
 import httpx
-from typing import List, Optional
+from typing import List, Dict, Any, Optional
 from fastapi import HTTPException
 
-from app.models.products import Producto
-
-STOCK_API_URL = os.getenv("STOCK_API_URL", "http://stock:8000/v1")
+SHIPPING_API_URL = os.getenv("SHIPPING_API_URL", "http://shipping_back:3010")
 KEYCLOAK_TOKEN_URL = os.getenv("KEYCLOAK_TOKEN_URL")
-KEYCLOAK_CLIENT_ID = os.getenv("grupo-13")
-KEYCLOAK_CLIENT_SECRET = os.getenv("404249de-18ba-403c-b45c-d82c446e2a2a")
+KEYCLOAK_CLIENT_ID = os.getenv("KEYCLOAK_CLIENT_ID")
+KEYCLOAK_CLIENT_SECRET = os.getenv("KEYCLOAK_CLIENT_SECRET")
+
+# 👇 Scopes que va a pedir el backend de Compras para hablar con Logística
+SHIPPING_SCOPES = os.getenv(
+    "SHIPPING_SCOPES",
+    "envios:read envios:write productos:read",
+)
 
 
-def _get_stock_access_token() -> str:
+def _get_shipping_access_token(scope: Optional[str] = None) -> str:
     """
-    Saca un token de Keycloak con client_credentials para llamar a STOCK.
-    El client en Keycloak tiene que tener scopes tipo productos:read.
+    Saca un access_token de Keycloak usando client_credentials
+    (igual que hacemos para hablar con Stock).
+    Ese token se usa solo entre COMPRAS y LOGÍSTICA.
     """
-    if not KEYCLOAK_TOKEN_URL:
-        raise RuntimeError("KEYCLOAK_TOKEN_URL no configurado")
+    if scope is None:
+        scope = SHIPPING_SCOPES
 
-    data = {
-        "grant_type": "client_credentials",
-        "client_id": KEYCLOAK_CLIENT_ID,
-        "client_secret": KEYCLOAK_CLIENT_SECRET,
+    if not KEYCLOAK_TOKEN_URL or not KEYCLOAK_CLIENT_ID or not KEYCLOAK_CLIENT_SECRET:
+        raise RuntimeError("Faltan env de Keycloak para Logística")
+
+    with httpx.Client() as client:
+        resp = client.post(
+            KEYCLOAK_TOKEN_URL,
+            data={
+                "grant_type": "client_credentials",
+                "client_id": KEYCLOAK_CLIENT_ID,
+                "client_secret": KEYCLOAK_CLIENT_SECRET,
+                "scope": scope,
+            },
+            timeout=10.0,
+        )
+
+    try:
+        resp.raise_for_status()
+    except httpx.HTTPStatusError:
+        raise HTTPException(
+            status_code=500,
+            detail=f"No se pudo obtener token para Logística ({resp.text})",
+        )
+
+    data = resp.json()
+    return data["access_token"]
+
+
+# =============== TRANSPORT METHODS ===============
+
+def listar_metodos_transporte() -> Dict[str, Any]:
+    token = _get_shipping_access_token("envios:read")
+    with httpx.Client() as client:
+        resp = client.get(
+            f"{SHIPPING_API_URL}/shipping/transport-methods",
+            headers={"Authorization": f"Bearer {token}"},
+            timeout=10.0,
+        )
+
+    try:
+        resp.raise_for_status()
+    except httpx.HTTPStatusError:
+        raise HTTPException(
+            status_code=resp.status_code,
+            detail=f"Error al obtener métodos de transporte ({resp.text})",
+        )
+
+    return resp.json()
+
+
+# =============== SHIPPING COST (QUOTE) ===============
+
+def cotizar_envio(
+    delivery_address: Dict[str, Any],
+    products: List[Dict[str, int]],
+) -> Dict[str, Any]:
+    """
+    Llama a POST /shipping/cost de Logística.
+    """
+    token = _get_shipping_access_token("envios:read productos:read")
+
+    payload = {
+        "delivery_address": delivery_address,
+        "products": products,
     }
 
     with httpx.Client() as client:
-        resp = client.post(KEYCLOAK_TOKEN_URL, data=data)
-        if resp.status_code != 200:
-            raise HTTPException(
-                status_code=502,
-                detail="No se pudo obtener token para STOCK",
-            )
-        token_data = resp.json()
-        return token_data["access_token"]
-
-
-def listar_productos(
-    page: int = 1,
-    limit: int = 20,
-    q: Optional[str] = None,
-    categoria_id: Optional[int] = None,
-) -> List[Producto]:
-    token = _get_stock_access_token()
-
-    params = {"page": page, "limit": limit}
-    if q:
-        params["q"] = q
-    if categoria_id is not None:
-        params["categoriaId"] = categoria_id
-
-    with httpx.Client() as client:
-        resp = client.get(
-            f"{STOCK_API_URL}/productos",
+        resp = client.post(
+            f"{SHIPPING_API_URL}/shipping/cost",
+            json=payload,
             headers={"Authorization": f"Bearer {token}"},
-            params=params,
+            timeout=10.0,
         )
-
-    if resp.status_code == 404:
-        return []
 
     try:
         resp.raise_for_status()
     except httpx.HTTPStatusError:
         raise HTTPException(
-            status_code=502,
-            detail="Error al consultar productos en STOCK",
+            status_code=resp.status_code,
+            detail=f"Error al cotizar envío ({resp.text})",
         )
 
-    data = resp.json()
-    return [Producto(**p) for p in data]
+    return resp.json()
 
 
-def obtener_producto(producto_id: int) -> Producto:
-    token = _get_stock_access_token()
+# =============== CREATE SHIPPING ===============
+
+def crear_envio(
+    order_id: int,
+    user_id: int | str,
+    delivery_address: Dict[str, Any],
+    transport_type: str,
+    products: List[Dict[str, int]],
+) -> Dict[str, Any]:
+    """
+    Llama a POST /shipping de Logística para crear el envío real.
+    """
+    token = _get_shipping_access_token("envios:write productos:read")
+
+    payload = {
+        "order_id": order_id,
+        "user_id": int(user_id),
+        "delivery_address": delivery_address,
+        "transport_type": transport_type,
+        "products": products,
+    }
 
     with httpx.Client() as client:
-        resp = client.get(
-            f"{STOCK_API_URL}/productos/{producto_id}",
+        resp = client.post(
+            f"{SHIPPING_API_URL}/shipping",
+            json=payload,
             headers={"Authorization": f"Bearer {token}"},
+            timeout=10.0,
         )
-
-    if resp.status_code == 404:
-        raise HTTPException(status_code=404, detail="Producto no encontrado en STOCK")
 
     try:
         resp.raise_for_status()
     except httpx.HTTPStatusError:
         raise HTTPException(
-            status_code=502,
-            detail="Error al consultar producto en STOCK",
+            status_code=resp.status_code,
+            detail=f"Error al crear envío ({resp.text})",
         )
 
-    data = resp.json()
-    return Producto(**data)
+    return resp.json()
+
+
+# =============== DETALLE + CANCELAR (si los usás) ===============
+
+def obtener_envio(shipping_id: int) -> Dict[str, Any]:
+    token = _get_shipping_access_token("envios:read")
+    with httpx.Client() as client:
+        resp = client.get(
+            f"{SHIPPING_API_URL}/shipping/{shipping_id}",
+            headers={"Authorization": f"Bearer {token}"},
+            timeout=10.0,
+        )
+
+    if resp.status_code == 404:
+        raise HTTPException(status_code=404, detail="Envío no encontrado en Logística")
+
+    try:
+        resp.raise_for_status()
+    except httpx.HTTPStatusError:
+        raise HTTPException(
+            status_code=resp.status_code,
+            detail=f"Error al obtener envío ({resp.text})",
+        )
+
+    return resp.json()
+
+
+def cancelar_envio(shipping_id: int) -> Dict[str, Any]:
+    token = _get_shipping_access_token("envios:write")
+    with httpx.Client() as client:
+        resp = client.post(
+            f"{SHIPPING_API_URL}/shipping/{shipping_id}/cancel",
+            headers={"Authorization": f"Bearer {token}"},
+            timeout=10.0,
+        )
+
+    if resp.status_code == 404:
+        raise HTTPException(status_code=404, detail="Envío no encontrado en Logística")
+
+    try:
+        resp.raise_for_status()
+    except httpx.HTTPStatusError:
+        raise HTTPException(
+            status_code=resp.status_code,
+            detail=f"Error al cancelar envío ({resp.text})",
+        )
+
+    return resp.json()
+
