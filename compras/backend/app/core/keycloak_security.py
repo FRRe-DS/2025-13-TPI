@@ -49,6 +49,12 @@ def require_auth(
 ) -> dict:
     return decode_token(credentials.credentials)
 
+# Devuelve el JWT crudo enviado por el frontend
+def get_bearer_token(
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+) -> str:
+    return credentials.credentials
+
 
 def require_scope(required_scope: str):
     def dependency(payload: dict = Depends(require_auth)):

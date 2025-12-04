@@ -9,8 +9,15 @@ from app.crud.cart import (
     update_item_quantity,
     clear_cart,
 )
-from app.schemas.carts import CartOut, CartItemUpdate, CartItemCreate  # ajusta nombres a los tuyos
-from app.core.keycloak_security import require_auth, require_scope
+from app.crud.order import checkout_from_cart_with_shipping
+
+from app.schemas.carts import CartOut, CartItemUpdate, CartItemCreate
+from app.schemas.shipping import AddressIn
+from app.schemas.orders import OrderOut
+
+from app.core.keycloak_security import require_auth, require_scope, get_bearer_token
+from pydantic import BaseModel
+
 
 router = APIRouter(
     prefix="/api/cart",
@@ -18,6 +25,9 @@ router = APIRouter(
 )
 
 
+# ====================
+# GET CART
+# ====================
 @router.get(
     "",
     response_model=CartOut,
@@ -32,6 +42,9 @@ def get_cart(
     return cart
 
 
+# ====================
+# ADD ITEM
+# ====================
 @router.post(
     "/items",
     response_model=CartOut,
@@ -53,6 +66,9 @@ def add_item(
     return cart
 
 
+# ====================
+# UPDATE ITEM
+# ====================
 @router.put(
     "/items/{product_id}",
     response_model=CartOut,
@@ -74,6 +90,9 @@ def update_item(
     return cart
 
 
+# ====================
+# CLEAR CART
+# ====================
 @router.delete(
     "",
     status_code=status.HTTP_204_NO_CONTENT,
@@ -86,3 +105,35 @@ def empty_cart(
     user_id = token_data["sub"]
     clear_cart(db, user_id=user_id)
     return
+
+
+# ====================================================================
+#  CHECKOUT (AQUÍ ES DONDE SE AGREGA EL ENVÍO A LOGÍSTICA)
+# ====================================================================
+
+# 1) Schema del body
+class CartCheckoutIn(BaseModel):
+    delivery_address: AddressIn
+    transport_type: str
+
+
+# 2) Endpoint /checkout
+@router.post(
+    "/checkout",
+    response_model=OrderOut,
+    dependencies=[Depends(require_scope("compras:write"))],
+)
+def checkout_cart(
+    payload: CartCheckoutIn,
+    db: Session = Depends(get_db),
+    token_data: dict = Depends(require_auth),
+):
+    user_id = token_data["sub"]
+
+    order = checkout_from_cart_with_shipping(
+        db=db,
+        user_id=user_id,
+        delivery_address=payload.delivery_address,
+        transport_type=payload.transport_type,
+    )
+    return order

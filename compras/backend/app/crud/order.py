@@ -5,6 +5,9 @@ from decimal import Decimal
 from app.models.orders import Order, OrderItem, OrderStatus
 from app.models.carts import Cart, CartItem
 from app.models.products import Producto as Product
+from app.crud import shipping_client
+from app.schemas.shipping import AddressIn
+from app.core.keycloak_security import get_bearer_token
 
 
 
@@ -80,7 +83,41 @@ def checkout_from_cart(db: Session, user_id: str) -> Order:
             status_code=500,
             detail=f"Error en checkout: {e}"
         )
-    
+
+def checkout_from_cart_with_shipping(
+    db: Session,
+    user_id: str,
+    delivery_address: AddressIn,
+    transport_type: str,
+) -> Order:
+    order = checkout_from_cart(db, user_id)
+
+    products_for_shipping: list[dict] = []
+    for item in order.items:
+        if not hasattr(item, "product_id"):
+            raise HTTPException(
+                status_code=500,
+                detail="OrderItem no tiene product_id definido. Revisar modelo OrderItem.",
+            )
+        products_for_shipping.append(
+            {"id": item.product_id, "quantity": item.quantity}
+        )
+
+    shipping_resp = shipping_client.crear_envio(
+        order_id=order.id,
+        user_id=user_id,
+        delivery_address=delivery_address.dict(),
+        transport_type=transport_type,
+        products=products_for_shipping,
+    )
+
+    order.shipping_id = shipping_resp.get("shipping_id")
+    order.shipping_status = shipping_resp.get("status")
+    order.shipping_transport_type = shipping_resp.get("transport_type")
+
+    db.commit()
+    db.refresh(order)
+    return order
 
 def list_user_orders(db: Session, user_id: str):
     return (
@@ -105,7 +142,7 @@ def get_user_order(db: Session, user_id: str, order_id: int) -> Order:
 
 
 def cancel_user_order(db: Session, user_id: str, order_id: int) -> None:
-    order = (
+    order: Order | None = (
         db.query(Order)
         .filter(Order.id == order_id, Order.user_id == user_id)
         .first()
@@ -113,10 +150,17 @@ def cancel_user_order(db: Session, user_id: str, order_id: int) -> None:
     if not order:
         raise HTTPException(status_code=404, detail="Orden no encontrada")
     
-    if order.status not in (OrderStatus.PENDING,):
+    if order.shipping_id:
+        shipping_client.cancelar_envio(order.shipping_id)
+
+    order.status = OrderStatus.CANCELED
+    order.shipping_status = "cancelled"
+    db.commit()
+    
+    if order.status != OrderStatus.PENDING:
         raise HTTPException(
-            status_code=409,
-            detail=f"No se puede cancelar una orden en estado {order.status}"
+            status_code=400,
+            detail="Solo se pueden cancelar órdenes en estado PENDING",
         )
     
     # Revertir stock y cancelar 
