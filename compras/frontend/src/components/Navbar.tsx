@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { ShoppingCart } from 'lucide-react';
 import { buildImageUrl } from '@/utils/imageUrl';
 import { useCart } from '@/context/CartContext';
+import { useAuth } from '@/context/AuthContext';
 
 // ========= Tipos usados en el NAVBAR =========
 
@@ -52,6 +53,7 @@ export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const { user, logout, isLoading } = useAuth();
 
   // 🔹 Carrito global
   const { items, totalItems, subtotal } = useCart();
@@ -192,6 +194,15 @@ export default function Navbar() {
     }
   };
 
+  // Etiqueta que se muestra en "Mi cuenta"
+    const accountLabel =
+    !user
+      ? 'Invitado'
+      : user.email
+        ? user.email
+        : user.nombre || 'Usuario autenticado';
+
+
   return (
     <nav className="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -302,12 +313,12 @@ export default function Navbar() {
           {/* Right Side Actions */}
           <div className="flex items-center gap-3">
             {/* Cart Icon */}
-            <div className="relative" ref={cartMenuRef}>
+            <div className="relative bg-gray-800 rounded-lg" ref={cartMenuRef}>
               <button
                 onClick={() => setIsCartOpen(!isCartOpen)}
-                className="relative p-2 hover:bg-gray-100 rounded-lg transition"
+                className="relative p-2 hover:bg-gray-500 rounded-lg transition"
               >
-                <ShoppingCart className="w-6 h-6" />
+                <ShoppingCart className="w-6 h-6 " />
                 {totalItems > 0 && (
                   <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full px-1">
                     {totalItems}
@@ -319,7 +330,9 @@ export default function Navbar() {
               {isCartOpen && (
                 <div className="absolute right-0 mt-2 w-80 bg-white shadow-lg rounded-lg border z-50">
                   <div className="p-4 border-b">
-                    <h3 className="font-semibold text-sm">Carrito de compras</h3>
+                    <h3 className="font-semibold text-sm text-gray-900">
+                      Carrito de compras
+                    </h3>
                   </div>
 
                   <div className="max-h-80 overflow-y-auto p-4 space-y-3">
@@ -331,7 +344,7 @@ export default function Navbar() {
 
                     {items.map((item) => (
                       <div key={item.id} className="flex gap-3">
-                        <div className="w-12 h-12 rounded bg-gray-100 flex items-center justify-center overflow-hidden">
+                        <div className="w-12 h-12 rounded bg-gray-700 flex items-center justify-center overflow-hidden">
                           {item.image && (
                             <Image
                               src={item.image}
@@ -344,13 +357,13 @@ export default function Navbar() {
                           )}
                         </div>
                         <div className="flex-1">
-                          <div className="text-sm font-medium line-clamp-1">
+                          <div className="text-sm text-gray-500 font-medium line-clamp-1">
                             {item.name}
                           </div>
                           <div className="text-xs text-gray-500">
                             Cantidad: {item.quantity}
                           </div>
-                          <div className="text-sm">
+                          <div className="text-sm text-gray-500">
                             ${(item.price * item.quantity).toFixed(2)}
                           </div>
                         </div>
@@ -360,7 +373,7 @@ export default function Navbar() {
 
                   {items.length > 0 && (
                     <div className="border-t p-4 space-y-3">
-                      <div className="flex justify-between text-sm">
+                      <div className="flex justify-between text-sm text-gray-500">
                         <span>Subtotal</span>
                         <span className="font-semibold">
                           ${subtotal.toFixed(2)}
@@ -406,78 +419,54 @@ export default function Navbar() {
                     <p className="text-sm font-semibold text-gray-900">
                       Mi cuenta
                     </p>
-                    <p className="text-xs text-gray-500">usuario@ejemplo.com</p>
+                    <p className="text-xs text-gray-500">
+                      {isLoading ? 'Cargando...' : accountLabel}
+                    </p>
                   </div>
 
-                  <button
-                    onClick={() => {
-                      router.push('/profile');
-                      setIsUserMenuOpen(false);
-                    }}
-                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition flex items-center gap-2"
-                  >
-                    <svg
-                      className="w-4 h-4"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                      />
-                    </svg>
-                    Mi perfil
-                  </button>
+                  {user && (
+                    <>
+                      <button
+                        onClick={() => {
+                          router.push('/profile');
+                          setIsUserMenuOpen(false);
+                        }}
+                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition"
+                      >
+                        Mi perfil
+                      </button>
 
-                  <button
-                    onClick={() => {
-                      router.push('/orders');
-                      setIsUserMenuOpen(false);
-                    }}
-                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition flex items-center gap-2"
-                  >
-                    <svg
-                      className="w-4 h-4"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M16 11V7a4 4 0 00-8 0 4 4 0 008 0zM5 9h14l1 12H4L5 9z"
-                      />
-                    </svg>
-                    Mis pedidos
-                  </button>
+                      <button
+                        onClick={() => {
+                          router.push('/orders');
+                          setIsUserMenuOpen(false);
+                        }}
+                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition"
+                      >
+                        Mis pedidos
+                      </button>
+                    </>
+                  )}
 
                   <div className="border-t border-gray-100 mt-2 pt-2">
-                    <button
-                      onClick={() => {
-                        console.log('Cerrar sesión');
-                        setIsUserMenuOpen(false);
-                      }}
-                      className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition flex items-center gap-2"
-                    >
-                      <svg
-                        className="w-4 h-4"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
+                    {user ? (
+                      <button
+                        onClick={() => {
+                          logout();
+                          setIsUserMenuOpen(false);
+                        }}
+                        className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition"
                       >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-                        />
-                      </svg>
-                      Cerrar sesión
-                    </button>
+                        Cerrar sesión
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => router.push('/login')}
+                        className="w-full text-left px-4 py-2 text-sm text-blue-600 hover:bg-blue-50 transition"
+                      >
+                        Iniciar sesión
+                      </button>
+                    )}
                   </div>
                 </div>
               )}
