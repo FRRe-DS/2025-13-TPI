@@ -147,6 +147,7 @@ services:
       KEYCLOAK_REALM: ds-2025-realm
       # URL interna del servicio de stock para que ellos lo llamen
       STOCK_SERVICE_URL: http://stock:8000/v1
+      KEYCLOAK_ISSUER_URL: http://keycloak:8080/realms/ds-2025-realm
     depends_on:
       shipping_mysql:
         condition: service_healthy
