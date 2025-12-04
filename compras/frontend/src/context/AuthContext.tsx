@@ -230,59 +230,61 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   );
 
   // ============================
-  // FINISH LOGIN (KEYCLOAK CALLBACK)
-  // ============================
-  const finishLoginFromCode = useCallback(
-    
-    async (code: string) => {
-      const baseUser = buildUserFromToken(accessToken);
-      console.log("🔥 USUARIO DECODIFICADO DESDE TOKEN:", baseUser);
+// FINISH LOGIN (KEYCLOAK CALLBACK)
+// ============================
+const finishLoginFromCode = useCallback(
+  async (code: string) => {
+    setIsLoading(true);
 
-      setIsLoading(true);
-      try {
-        const res = await fetch(`${API_BASE_URL}/api/auth/exchange`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            code,
-            redirect_uri: KC_REDIRECT_URI,
-          }),
-        });
-        
+    try {
+      // 1) Intercambiamos el "code" por tokens en tu backend
+      const res = await fetch(`${API_BASE_URL}/api/auth/exchange`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          code,
+          redirect_uri: KC_REDIRECT_URI,
+        }),
+      });
 
-        if (!res.ok) {
-          console.error('Error en exchange');
-          throw new Error('No se pudo intercambiar el code por token');
-        }
-
-        const data = await res.json();
-        const accessToken = data.access_token;
-
-        if (!accessToken) {
-          throw new Error('Keycloak no devolvió un access_token');
-        }
-
-        localStorage.setItem('token', accessToken);
-        setToken(accessToken);
-
-        const baseUser = buildUserFromToken(accessToken);
-        if (baseUser) setUser(baseUser);
-
-        fetchUser(accessToken); // opcional
-        router.replace('/dashboard');
-      } catch (err) {
-        console.error('Error en finishLoginFromCode:', err);
-        logoutLocal();
-        throw err;
-      } finally {
-        setIsLoading(false);
+      if (!res.ok) {
+        console.error('Error en exchange');
+        throw new Error('No se pudo intercambiar el code por token');
       }
-    },
-    [fetchUser, logoutLocal, router]
 
-    
+      // 2) Obtenemos el access_token de la respuesta
+      const data = await res.json();
+      const accessToken: string | undefined = data.access_token;
 
-  );
+      if (!accessToken) {
+        throw new Error('Keycloak no devolvió un access_token');
+      }
+
+      // 3) Guardamos token y actualizamos estado
+      localStorage.setItem('token', accessToken);
+      setToken(accessToken);
+
+      // 4) Decodificamos el usuario desde el token
+      const baseUser = buildUserFromToken(accessToken);
+      console.log('🔥 USUARIO DECODIFICADO DESDE TOKEN:', baseUser);
+      if (baseUser) setUser(baseUser);
+
+      // 5) (Opcional) pedimos datos extra al backend
+      fetchUser(accessToken);
+
+      // 6) Redirigimos a dashboard
+      router.replace('/dashboard');
+    } catch (err) {
+      console.error('Error en finishLoginFromCode:', err);
+      logoutLocal();
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  },
+  [fetchUser, logoutLocal, router]
+);
+
 
   
   // ============================
