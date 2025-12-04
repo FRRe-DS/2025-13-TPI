@@ -90,8 +90,14 @@ def checkout_from_cart_with_shipping(
     delivery_address: AddressIn,
     transport_type: str,
 ) -> Order:
+    """
+    Hace el checkout normal y luego crea el envío en Logística.
+    """
+
+    # 1) Checkout normal
     order = checkout_from_cart(db, user_id)
 
+    # 2) Build products para Logística
     products_for_shipping: list[dict] = []
     for item in order.items:
         if not hasattr(item, "product_id"):
@@ -103,6 +109,7 @@ def checkout_from_cart_with_shipping(
             {"id": item.product_id, "quantity": item.quantity}
         )
 
+    # 3) Crear envío en Logística (usa client_credentials internamente)
     shipping_resp = shipping_client.crear_envio(
         order_id=order.id,
         user_id=user_id,
@@ -111,6 +118,7 @@ def checkout_from_cart_with_shipping(
         products=products_for_shipping,
     )
 
+    # 4) Guardar info de envío en la orden
     order.shipping_id = shipping_resp.get("shipping_id")
     order.shipping_status = shipping_resp.get("status")
     order.shipping_transport_type = shipping_resp.get("transport_type")
