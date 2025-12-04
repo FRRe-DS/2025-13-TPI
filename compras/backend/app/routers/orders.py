@@ -1,3 +1,5 @@
+from app.crud import shipping_client
+from app.models.orders import Order
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 from typing import List
@@ -13,6 +15,7 @@ from app.crud.order import (
 from app.schemas.orders import OrderOut, OrderListItem
 from app.schemas.shipping import CheckoutWithShippingIn
 from app.core.keycloak_security import require_auth, require_scope
+from app.schemas.shipping import AddressIn
 
 router = APIRouter(
     prefix="/api/cart",
@@ -20,25 +23,35 @@ router = APIRouter(
 )
 
 
-@router.post(
-    "/checkout",
-    response_model=OrderOut,
-    status_code=status.HTTP_201_CREATED,
-    dependencies=[Depends(require_scope("compras:write"))],
-)
-def checkout_cart_with_shipping(
-    payload: CheckoutWithShippingIn,
-    db: Session = Depends(get_db),
-    token_data: dict = Depends(require_auth),
-):
-    user_id = token_data["sub"]
-    order = checkout_from_cart_with_shipping(
-        db=db,
+def checkout_from_cart_with_shipping(
+    db: Session,
+    user_id: str,
+    delivery_address: AddressIn,
+    transport_type: str,
+) -> Order:
+    order = checkout_from_cart(db, user_id)
+
+    products_for_shipping: list[dict] = [
+        {"id": item.product_id, "quantity": item.quantity}
+        for item in order.items
+    ]
+
+    shipping_resp = shipping_client.crear_envio(
+        order_id=order.id,
         user_id=user_id,
-        delivery_address=payload.delivery_address,
-        transport_type=payload.transport_type,
+        delivery_address=delivery_address.dict(),
+        transport_type=transport_type,
+        products=products_for_shipping,
     )
+
+    order.shipping_id = shipping_resp.get("shipping_id")
+    order.shipping_status = shipping_resp.get("status")
+    order.shipping_transport_type = shipping_resp.get("transport_type")
+
+    db.commit()
+    db.refresh(order)
     return order
+
 
 
 @router.get(

@@ -6,10 +6,19 @@ import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
 import { apiFetch } from '../../../lib/api';
 
+interface TransportMethodApi {
+  id: number;
+  name: string;
+  type: 'air' | 'road' | 'rail' | 'sea';
+  estimatedDays?: string;
+  estimated_days?: string;
+}
+
+
 interface TransportMethod {
   type: 'air' | 'road' | 'rail' | 'sea';
   name: string;
-  estimated_days: string;
+  estimated_days: string; // lo normalizamos a snake_case en el map
 }
 
 interface AddressForm {
@@ -58,15 +67,28 @@ export default function CartPage() {
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
   // Cargar métodos de transporte
+  // Cargar métodos de transporte
   useEffect(() => {
     if (!token) return;
 
     const loadMethods = async () => {
       try {
         const data = await apiFetch('/api/shipping/transport-methods', {}, token);
-        setTransportMethods(data.transport_methods || []);
-        if ((data.transport_methods || []).length > 0) {
-          setSelectedTransport(data.transport_methods[0].type);
+
+        // Soportar ambos formatos por las dudas: transport_methods o transportMethods
+        const rawMethods =
+          (data.transport_methods ?? data.transportMethods ?? []) as TransportMethodApi[];
+
+        const normalized: TransportMethod[] = rawMethods.map((m) => ({
+          type: m.type,
+          name: m.name,
+          estimated_days: m.estimated_days ?? m.estimatedDays ?? '',
+        }));
+
+        setTransportMethods(normalized);
+
+        if (normalized.length > 0) {
+          setSelectedTransport(normalized[0].type);
         }
       } catch (err: unknown) {
         console.error('Error cargando métodos de transporte', err);
@@ -75,6 +97,8 @@ export default function CartPage() {
 
     loadMethods();
   }, [token]);
+
+
 
   const handleAddressChange = (field: keyof AddressForm, value: string) => {
     setAddress((prev) => ({ ...prev, [field]: value }));

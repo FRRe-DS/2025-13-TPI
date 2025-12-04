@@ -1,123 +1,116 @@
-# app/core/keycloak_security.py
-
 import os
-from functools import lru_cache
+from typing import Dict, Any
 
-import httpx
+import jwt
+from jwt import PyJWKClient
 from fastapi import Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer
-from jose import jwt, JWTError
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
+# =========================
+# Config
+# =========================
 
-# === Config de Keycloak ===
-KEYCLOAK_BASE_URL = os.getenv("KEYCLOAK_BASE_URL", "http://keycloak:8080")
-KEYCLOAK_REALM = os.getenv("KEYCLOAK_REALM", "ds-2025-realm")
+# URL pública que Keycloak pone en el campo "iss" del token.
+# Como levantás Keycloak con KC_HOSTNAME=localhost, el issuer real
+# de los tokens es "http://localhost:8080/realms/ds-2025-realm".
+KEYCLOAK_ISSUER = os.getenv(
+    "KEYCLOAK_ISSUER",
+    "http://localhost:8080/realms/ds-2025-realm",
+)
 
-ISSUER = f"{KEYCLOAK_BASE_URL}/realms/{KEYCLOAK_REALM}"
-JWKS_URL = f"{ISSUER}/protocol/openid-connect/certs"
+# URL interna (desde Docker) para bajar las claves públicas (JWKS)
+KEYCLOAK_JWKS_URL = os.getenv(
+    "KEYCLOAK_JWKS_URL",
+    "http://keycloak:8080/realms/ds-2025-realm/protocol/openid-connect/certs",
+)
 
-# Solo lo usamos para leer el header Authorization: Bearer <token>
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
-security = HTTPBearer(auto_error=False)
+security = HTTPBearer()
+jwks_client = PyJWKClient(KEYCLOAK_JWKS_URL)
 
 
-@lru_cache()
-def get_jwks() -> dict:
+# =========================
+# Helpers
+# =========================
+
+def decode_token(token: str) -> Dict[str, Any]:
     """
-    Descarga y cachea las claves públicas (JWKS) de Keycloak.
+    Decodifica y verifica el token de Keycloak usando RS256.
+    - Verifica firma con la llave pública del JWKS.
+    - No verifica aud.
+    - Verifica issuer contra KEYCLOAK_ISSUER.
     """
-    resp = httpx.get(JWKS_URL, timeout=5.0)
-    if resp.status_code != 200:
-        print("Error obteniendo JWKS de Keycloak:", resp.status_code, resp.text)
-        raise RuntimeError("No se pudo obtener JWKS de Keycloak")
-    return resp.json()
-
-
-def decode_keycloak_token(token: str) -> dict:
-    """
-    Verifica la firma del JWT usando las claves públicas de Keycloak
-    y devuelve los claims decodificados.
-    """
-    jwks = get_jwks()
-
     try:
-        unverified_header = jwt.get_unverified_header(token)
-    except JWTError:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Cabecera de token inválida",
-        )
+        signing_key = jwks_client.get_signing_key_from_jwt(token)
 
-    kid = unverified_header.get("kid")
-    if not kid:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token sin 'kid' en el header",
-        )
-
-    key = next((k for k in jwks["keys"] if k.get("kid") == kid), None)
-    if key is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="No se encontró clave pública para ese 'kid'",
-        )
-
-    try:
-        decoded = jwt.decode(
+        payload = jwt.decode(
             token,
-            key,
-            algorithms=[unverified_header.get("alg", "RS256")],
-            issuer=ISSUER,
-            audience=None,
-            options={"verify_aud": False},  # si querés validar 'aud', lo podés activar
+            signing_key.key,
+            algorithms=["RS256"],
+            issuer=KEYCLOAK_ISSUER,
+            options={
+                "verify_aud": False,
+            },
         )
-        return decoded
-    except JWTError as e:
-        print("Error decodificando token KC:", e)
+        return payload
+
+    except jwt.ExpiredSignatureError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token inválido o expirado",
+            detail="Token expirado",
+        )
+    except jwt.InvalidIssuerError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Issuer inválido en el token",
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=f"Token inválido: {e}",
         )
 
 
-# === DEPENDENCIAS QUE USA TU ROUTER ===
-
-async def require_auth(token_str: str = Depends(oauth2_scheme)) -> dict:
-    """
-    Dependencia que:
-      - lee Authorization: Bearer <token>
-      - verifica el token contra Keycloak
-      - devuelve el payload decodificado (dict)
-    """
-    decoded = decode_keycloak_token(token_str)
-    return decoded
-
-# Devuelve el JWT crudo enviado por el frontend
-def get_bearer_token(
+def require_auth(
     credentials: HTTPAuthorizationCredentials = Depends(security),
-) -> str:
-    return credentials.credentials
+) -> Dict[str, Any]:
+    """Dependencia principal para proteger endpoints."""
+    if credentials.scheme.lower() != "bearer":
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Esquema de autenticación inválido",
+        )
+
+    return decode_token(credentials.credentials)
 
 
 def require_scope(required_scope: str):
     """
-    Crea una dependencia que verifica que el token tenga un scope dado.
-
-    Se usa así:
-      dependencies=[Depends(require_scope("usuarios:read"))]
+    Devuelve una dependencia que chequea que el scope dado
+    esté en el "scope" del token de Keycloak.
     """
-
-    async def _check_scope(token: dict = Depends(require_auth)):
-        # OJO: depende de cómo estés mapeando scopes/roles.
-        # Aquí asumo que Keycloak mete los scopes en el claim "scope" separado por espacios.
-        scope_str = token.get("scope", "") or ""
-        scopes = scope_str.split()
-
+    def dependency(payload: Dict[str, Any] = Depends(require_auth)):
+        scopes_str = payload.get("scope", "")
+        scopes = scopes_str.split()
         if required_scope not in scopes:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail=f"No tenés el scope requerido: {required_scope}",
+                detail=f"Se requiere el scope '{required_scope}'",
             )
+        return payload
 
-    return _check_scope
+    return dependency
+
+
+def get_bearer_token(
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+) -> str:
+    """
+    Devuelve simplemente el string del access_token
+    (para pasárselo a Logística en /api/shipping/...).
+    """
+    if credentials.scheme.lower() != "bearer":
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Esquema de autenticación inválido",
+        )
+    return credentials.credentials

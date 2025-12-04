@@ -6,10 +6,26 @@ from fastapi import HTTPException
 
 SHIPPING_API_URL = os.getenv("SHIPPING_API_URL", "http://shipping_back:3010")
 
+# =============== SHIPPING COST ===============
+
+async def cotizar_envio(payload: dict) -> dict:
+    async with httpx.AsyncClient(base_url=SHIPPING_API_URL, timeout=10.0) as client:
+        resp = await client.post("/shipping/cost", json=payload)
+
+    try:
+        resp.raise_for_status()
+    except httpx.HTTPStatusError:
+        raise HTTPException(
+            status_code=resp.status_code,
+            detail=f"Error al cotizar envío ({resp.text})",
+        )
+
+    return resp.json()
 
 # =============== TRANSPORT METHODS ===============
 
 def listar_metodos_transporte() -> Dict[str, Any]:
+
     with httpx.Client() as client:
         resp = client.get(
             f"{SHIPPING_API_URL}/shipping/transport-methods",
@@ -25,36 +41,6 @@ def listar_metodos_transporte() -> Dict[str, Any]:
         )
 
     return resp.json()
-
-
-# =============== SHIPPING COST (QUOTE) ===============
-
-def cotizar_envio(
-    delivery_address: Dict[str, Any],
-    products: List[Dict[str, int]],
-) -> Dict[str, Any]:
-    payload = {
-        "delivery_address": delivery_address,
-        "products": products,
-    }
-
-    with httpx.Client() as client:
-        resp = client.post(
-            f"{SHIPPING_API_URL}/shipping/cost",
-            json=payload,
-            timeout=10.0,
-        )
-
-    try:
-        resp.raise_for_status()
-    except httpx.HTTPStatusError:
-        raise HTTPException(
-            status_code=resp.status_code,
-            detail=f"Error al cotizar envío ({resp.text})",
-        )
-
-    return resp.json()
-
 
 # =============== CREATE SHIPPING ===============
 
@@ -89,48 +75,3 @@ def crear_envio(
         )
 
     return resp.json()
-
-
-# =============== DETALLE + CANCELACIÓN ===============
-
-def obtener_envio(shipping_id: int) -> Dict[str, Any]:
-    with httpx.Client() as client:
-        resp = client.get(
-            f"{SHIPPING_API_URL}/shipping/{shipping_id}",
-            timeout=10.0,
-        )
-
-    if resp.status_code == 404:
-        raise HTTPException(status_code=404, detail="Envío no encontrado en Logística")
-
-    try:
-        resp.raise_for_status()
-    except httpx.HTTPStatusError:
-        raise HTTPException(
-            status_code=resp.status_code,
-            detail=f"Error al obtener envío ({resp.text})",
-        )
-
-    return resp.json()
-
-
-def cancelar_envio(shipping_id: int) -> Dict[str, Any]:
-    with httpx.Client() as client:
-        resp = client.post(
-            f"{SHIPPING_API_URL}/shipping/{shipping_id}/cancel",
-            timeout=10.0,
-        )
-
-    if resp.status_code == 404:
-        raise HTTPException(status_code=404, detail="Envío no encontrado en Logística")
-
-    try:
-        resp.raise_for_status()
-    except httpx.HTTPStatusError:
-        raise HTTPException(
-            status_code=resp.status_code,
-            detail=f"Error al cancelar envío ({resp.text})",
-        )
-
-    return resp.json()
-
