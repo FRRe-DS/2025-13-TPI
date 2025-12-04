@@ -14,13 +14,13 @@ router = APIRouter(
 
 
 class ShippingCostProductIn(BaseModel):
-  id: int
-  quantity: int
+    id: int
+    quantity: int
 
 
 class ShippingCostIn(BaseModel):
-  delivery_address: AddressIn
-  products: List[ShippingCostProductIn]
+    delivery_address: AddressIn
+    products: List[ShippingCostProductIn]
 
 
 @router.get(
@@ -48,4 +48,3 @@ def get_shipping_cost(payload: ShippingCostIn):
 )
 def get_shipping_detail(shipping_id: int):
     return shipping_client.obtener_envio(shipping_id)
-
