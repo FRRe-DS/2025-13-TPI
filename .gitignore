@@ -1,0 +1,43 @@
+# === Entornos virtuales ===
+.venv/
+venv/
+
+# === Archivos de compilación ===
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.py[cod]
+
+# === VS Code y PyCharm ===
+.vscode/
+.idea/
+
+# === Logs y cachés ===
+*.log
+*.pot
+*.pyc
+*.pyo
+*.pyd
+*.sqlite3
+*.db
+*.pid
+*.gz
+*.egg-info/
+.mypy_cache/
+.pytest_cache/
+.coverage
+.env
+htmlcov/
+
+# === Sistema operativo ===
+.DS_Store
+Thumbs.db
+
+# === Node (frontend) ===
+node_modules/
+.env
+.env.local
+.next/
+dist/
+build/
