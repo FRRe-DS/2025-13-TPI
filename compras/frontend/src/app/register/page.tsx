@@ -2,9 +2,15 @@
 
 import { FormEvent, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:8000';
+
+interface RegisterResponse {
+  access_token?: string;
+  // si tu backend devuelve más campos, podés agregarlos acá
+}
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -18,7 +24,7 @@ export default function RegisterPage() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleRegisterForm = async (e: FormEvent) => {
+  const handleRegisterForm = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setErrorMsg(null);
 
@@ -41,28 +47,31 @@ export default function RegisterPage() {
       });
 
       if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
+        const data = (await res.json().catch(() => ({}))) as {
+          detail?: string;
+        };
         const detail = data.detail || 'No se pudo crear el usuario.';
         throw new Error(detail);
       }
 
-      const tokens = await res.json();
-      const accessToken: string | undefined = tokens.access_token;
+      const tokens = (await res.json()) as RegisterResponse;
+      const accessToken = tokens.access_token;
 
       if (!accessToken) {
         throw new Error('No se recibió access_token desde el backend.');
       }
 
-      // Guardamos el token igual que hace tu AuthContext
       if (typeof window !== 'undefined') {
         localStorage.setItem('token', accessToken);
       }
 
-      // Redirigimos directo al dashboard.
-      // El AuthProvider en el layout va a leer el token y llamar a /api/users/me.
       router.replace('/dashboard');
-    } catch (err: any) {
-      setErrorMsg(err.message || 'Error al registrar usuario.');
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setErrorMsg(err.message || 'Error al registrar usuario.');
+      } else {
+        setErrorMsg('Error al registrar usuario.');
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -74,10 +83,13 @@ export default function RegisterPage() {
       <div className="hidden md:flex flex-1 flex-col justify-center bg-[#3e3e3e] px-12 text-white bg-[url('/fondo.png')] bg-cover bg-no-repeat bg-[position:-1050%_center]">
         <div className="mb-8 flex flex-col items-center text-center">
           <div>
-            <img
+            <Image
               src="/fondo2.png"
               alt="Logo de ComprasApp"
+              width={200}
+              height={200}
               className="w-124 h-124"
+              priority
             />
           </div>
         </div>
