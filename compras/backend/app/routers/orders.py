@@ -5,11 +5,13 @@ from typing import List
 from app.db import get_db
 from app.crud.order import (
     checkout_from_cart,
+    checkout_from_cart_with_shipping,
     list_user_orders,
     get_user_order,
     cancel_user_order,
 )
 from app.schemas.orders import OrderOut, OrderListItem
+from app.schemas.shipping import CheckoutWithShippingIn
 from app.core.keycloak_security import require_auth, require_scope
 
 router = APIRouter(
@@ -24,13 +26,18 @@ router = APIRouter(
     status_code=status.HTTP_201_CREATED,
     dependencies=[Depends(require_scope("compras:write"))],
 )
-def checkout(
+def checkout_cart_with_shipping(
+    payload: CheckoutWithShippingIn,
     db: Session = Depends(get_db),
     token_data: dict = Depends(require_auth),
 ):
-    # ID del usuario autenticado en Keycloak (claim 'sub')
     user_id = token_data["sub"]
-    order = checkout_from_cart(db, user_id=user_id)
+    order = checkout_from_cart_with_shipping(
+        db=db,
+        user_id=user_id,
+        delivery_address=payload.delivery_address,
+        transport_type=payload.transport_type,
+    )
     return order
 
 

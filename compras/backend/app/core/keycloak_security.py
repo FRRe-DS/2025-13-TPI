@@ -90,6 +90,12 @@ async def require_auth(token_str: str = Depends(oauth2_scheme)) -> dict:
     decoded = decode_keycloak_token(token_str)
     return decoded
 
+# Devuelve el JWT crudo enviado por el frontend
+def get_bearer_token(
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+) -> str:
+    return credentials.credentials
+
 
 def require_scope(required_scope: str):
     """

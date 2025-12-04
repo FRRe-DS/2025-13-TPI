@@ -23,6 +23,11 @@ class Order(Base):
     
     items = relationship("OrderItem", back_populates="order", cascade="all, delete-orphan")
 
+    shipping_id = Column(Integer, index=True, nullable=True)
+    shipping_status = Column(String(50), nullable=True)
+    shipping_transport_type = Column(String(20), nullable=True)
+    shipping_total_cost = Column(Numeric(10, 2), nullable=True)
+    shipping_currency = Column(String(3), nullable=True)
 
 class OrderItem(Base):
     __tablename__ = "order_items"
