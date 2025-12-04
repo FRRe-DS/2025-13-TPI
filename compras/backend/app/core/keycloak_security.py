@@ -7,6 +7,8 @@ import httpx
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import jwt, JWTError
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+
 
 # === Config de Keycloak ===
 KEYCLOAK_BASE_URL = os.getenv("KEYCLOAK_BASE_URL", "http://keycloak:8080")
@@ -17,6 +19,7 @@ JWKS_URL = f"{ISSUER}/protocol/openid-connect/certs"
 
 # Solo lo usamos para leer el header Authorization: Bearer <token>
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
+security = HTTPBearer(auto_error=False)
 
 
 @lru_cache()
